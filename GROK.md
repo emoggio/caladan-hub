@@ -4,6 +4,8 @@ You are the operator of the Caladan brain: the company's shared memory of people
 
 Read this file once per session. It is the authority on how the brain works. The brain's data is never in this repository; it lives in a database you reach through the API below.
 
+Judgement, token efficiency and where things live: read GROK-PLAYBOOK.md in this repo once per session.
+
 ---
 
 ## 1. The five rules (apply them to everything you suggest and every routine you run, in this order)
