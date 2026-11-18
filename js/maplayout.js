@@ -47,17 +47,25 @@
   H.attention = attention;
   function ownerOf(nE, nA) { return nE + nA === 0 ? 'none' : nE > nA * 1.5 ? 'eugenio' : nA > nE * 1.5 ? 'alex' : 'both'; }
 
+  /* A landscape record joins the map when something on the map, the founders and Caladan included, has an edge to it
+     (Sophia's firm, a contact's investor). The record stays as it is in the brain; the map only stops hiding it. */
+  var linkedCache = { rev: -1, set: {} };
+  H.refLinked = function () {
+    var D = H.data; if (linkedCache.rev === H.rev && linkedCache.n === D.edges.length) return linkedCache.set;
+    var set = {};
+    D.edges.forEach(function (e) {
+      var a = D.nodes.get(e.source), b = D.nodes.get(e.target); if (!a || !b) return;
+      if (a._.ref && !b._.ref) set[e.source] = 1;
+      if (b._.ref && !a._.ref) set[e.target] = 1;
+    });
+    linkedCache = { rev: H.rev, n: D.edges.length, set: set }; return set;
+  };
+  /* hidden unless the landscape is switched on */
+  H.refHidden = function (id) { var n = H.data.nodes.get(id); return !!(n && n._.ref && !H.refLinked()[id]); };
+
   /* Builds the units (an organisation with its people, or a person on their own) that get a place on the map. */
   function units(landscape, group) {
-    var D = H.data, out = [], placed = {}, linked = {};
-    /* a landscape record joins the map when someone on the map is linked to it (Sophia's firm, a contact's investor):
-       the record stays as it is in the brain; the map only stops hiding it */
-    D.edges.forEach(function (e) {
-      var a = D.nodes.get(e.source), b = D.nodes.get(e.target);
-      if (!a || !b || H.isUs(e.source) || H.isUs(e.target)) return;
-      if (a._.ref && !b._.ref) linked[e.source] = 1;
-      if (b._.ref && !a._.ref) linked[e.target] = 1;
-    });
+    var D = H.data, out = [], placed = {}, linked = H.refLinked();
     function show(id) { return !H.isUs(id) && (landscape || !D.nodes.get(id)._.ref || linked[id]); }
     D.nodes.forEach(function (n, id) {
       if (n.type === 'person' || !show(id)) return;

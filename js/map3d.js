@@ -9,7 +9,7 @@
   var BG = '#05070d';
   var G = null, box = null, labs = null, loading = null, raf = 0, hover = '', els = new Map(), titles = [];
   var cur = { L: null, hi: {}, sel: '', pick: null, C: null, route: false, flownTo: '' };
-  var pinned = {}, dragging = '';   /* bubbles a founder pulled and dropped, and the one being pulled now */
+  var pinned = {}, dragging = '', byIdCore = {};   /* bubbles a founder pulled and dropped, and the one being pulled now */
 
   function load() {
     if (window.ForceGraph3D) return Promise.resolve();
@@ -35,7 +35,7 @@
         core: !!core, person: !!o.person, ref: !!o.ref, group: o.group, val: Math.max(1, (o.r * o.r) / 10), imp: o.imp || 0 };
       /* h* is the bubble's home: its place by territory and recency. Only Caladan and the founders are nailed there. */
       n.hx = n.x = r * Math.cos(lat) * Math.cos(a); n.hy = n.y = r * Math.sin(lat); n.hz = n.z = r * Math.cos(lat) * Math.sin(a);
-      if (core) { n.fx = n.x; n.fy = n.y; n.fz = n.z; }
+      if (core) { n.fx = n.x; n.fy = n.y; n.fz = n.z; byIdCore[n.id] = 1; }
       nodes.push(n); byId[n.id] = n;
     }
     L.nodes.forEach(function (o) { add(o, false); });
@@ -90,19 +90,21 @@
       .onNodeDragEnd(function (n) {
         dragging = '';
         /* it stays where it was dropped (after the library has let go of it) */
-        setTimeout(function () { n.fx = n.x; n.fy = n.y; n.fz = n.z; if (!n.core) pinned[n.id] = 1; relink(); G.d3ReheatSimulation(); }, 0);
+        /* Caladan and the founders always go back to the centre */
+        setTimeout(function () { if (n.core) { n.fx = n.hx; n.fy = n.hy; n.fz = n.hz; } else { n.fx = n.x; n.fy = n.y; n.fz = n.z; pinned[n.id] = 1; } relink(); G.d3ReheatSimulation(); }, 0);
       });
     /* Pulling: no free-running layout, so the map keeps its meaning. Every loose bubble is held to its home by a spring;
        only the links of the bubble being pulled, or of a dropped one, pull too, so its direct contacts follow it. */
     G.d3Force('charge', null).d3Force('center', null).d3Force('home', home3d());
-    G.d3Force('link').distance(70).strength(function (l) { var a = idOf(l.source), b = idOf(l.target); return a === dragging || b === dragging || pinned[a] || pinned[b] ? 0.25 : 0; });
+    G.d3Force('link').distance(70).strength(function (l) { var a = idOf(l.source), b = idOf(l.target); var d = dragging && !(byIdCore[dragging]) ? dragging : ''; return a === d || b === d || pinned[a] || pinned[b] ? 0.25 : 0; });
     /* flatter, brighter light so the founder colours read at full strength instead of shaded dark */
     G.scene().children.forEach(function (o) { if (o.isAmbientLight) o.intensity *= 2.2; if (o.isDirectionalLight) o.intensity *= 0.5; });
   }
 
   function home3d() {
     var ns = [];
-    function f() { ns.forEach(function (n) { if (n.fx != null) return; n.vx += (n.hx - n.x) * 0.06; n.vy += (n.hy - n.y) * 0.06; n.vz += (n.hz - n.z) * 0.06; }); }
+    /* scaled by alpha like d3's link force, so a dropped bubble's contacts settle part-way towards it and stay there */
+    function f(alpha) { var k = 0.12 * alpha; ns.forEach(function (n) { if (n.fx != null) return; n.vx += (n.hx - n.x) * k; n.vy += (n.hy - n.y) * k; n.vz += (n.hz - n.z) * k; }); }
     f.initialize = function (x) { ns = x; };
     return f;
   }

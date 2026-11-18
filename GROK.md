@@ -87,9 +87,9 @@ Each record lives in a **collection** and has an **id**. Dates are `YYYY-MM-DD`;
 | `fin` | company money: `{fundingUSD, lastRound{amountUSD,date,lead,type}, investors[], staff, founded, source}` |
 | `caps` | for rivals and us: twelve scores 0-3, keys `se phys ew cuas auto fpv bms aar ukr accr usv oem` (synthetic env, flight physics, EW, counter-UAS, autonomy data, FPV training, BMS link, replay, Ukraine data, accreditation, maritime, OEM library). `n_caladan` holds ours. |
 | `fund` | for a funding scheme: amount, deadline, eligibility |
-| `ref` | `true` for background landscape: kept out of counts of who we know, and off the map unless something on the map links to it. Never change it to tidy the map |
+| `ref` | an old flag on some records. The page ignores it: landscape is decided by the id prefix (below). Leave it as it is |
 
-Id prefixes: `n_` people and organisations the founders deal with; `c_` companies (competitors, investors, primes); `s_` simulation products and rivals; `r_`, `fd_`, `ndf_` reference landscape (agencies, funds by country, non-dilutive funding schemes). Whether a record is landscape is decided by its `ref` flag, not its prefix: some `c_` companies are landscape too.
+Id prefixes: `n_` people and organisations the founders deal with; `c_` companies (competitors, investors, primes); `s_` simulation products and rivals; `r_`, `fd_`, `ndf_` reference landscape (agencies, funds by country, non-dilutive funding schemes). Landscape is decided by these prefixes alone: kept out of counts of who we know, and off the map unless something on the map, the founders included, has an edge to it.
 
 ### Relationships: `edges`
 
@@ -168,7 +168,7 @@ Always write your own status record at the end of a run, truthfully: `lastAttemp
 | Goals (timeline) | number against target; text when `current` is text; "count not recorded · waiting on X" when a founder passed it on | `n`, `text`/`short`, `current`, `target`, `unit`, `status`, `by`, `owner`, `triage` |
 | Needs doing | **Due now**: open `next` on people, organisations and pipeline cards, and `open` promises, dated today or earlier (the same action on several records counts once). **Waiting for yes / no**: `proposed` with no `triage.answer`. **With Alex / parked**: `proposed` with a `triage.answer` | `next`, `commitments`, `decisions`, `triage`, `who` |
 | Customers, Raise (boards) | one column per stage; a card is "need a move" only if its step is late, its deadline is within 14 days, or it has no next step; budget holder, objection and a `triage` note newer than the step show on the card | `name`/`investorId`, `stage`, `next`, `deadline`, `budgetHolder`, `objection`, `owner`, `goalId`, `triage` |
-| Network (2D or 3D map) | direction = kind of organisation, distance from centre = how recently we spoke, colour = which founder; a line for every `edges` record between two bubbles. A record with `ref: true` (landscape) appears on the map only when something on the map has an edge to it (a contact's firm, an investor of a company we deal with) or when a founder ticks "Show landscape". So record the edge: a person with no edge to their organisation sits alone | `nodes`, `edges`, `touchpoints`, `lastContact`, `owner`, `ref` |
+| Network (2D or 3D map) | direction = kind of organisation, distance from centre = how recently we spoke, colour = which founder; a line for every `edges` record between two bubbles. A landscape record (id `r_`, `fd_`, `ndf_`) appears only when something on the map has an edge to it, or when a founder ticks "Show landscape". A person is drawn beside their organisation when `org` names it or a `works_at` edge exists; with neither, they sit alone | `nodes`, `edges`, `touchpoints`, `lastContact`, `owner`, `org` |
 | Product and market: Market tab | money by quarter and segment; which segments are heating up; latest signals | `signals.date`, `kind`, `segment`, `amountUSD` |
 | Product and market: Rivals tab | overlap with us against money raised; capability matrix | `nodes.caps`, `nodes.fin.fundingUSD` |
 | Product and market: Rounds tab | what companies like us raised; valuations over time | `valuations` |

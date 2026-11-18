@@ -66,7 +66,7 @@
       panel('todo', 'Needs doing', todoHead(), todoPanel),
       panel('customers', 'Customers', H.pipeHead('opp'), function (b) { H.pipePanel('opp', b); }),
       panel('raise', 'Raise', H.pipeHead('raise'), function (b) { H.pipePanel('raise', b); }),
-      panel('network', 'Network', { n: D.nodes.size, unit: 'on the map', bad: 0, warn: 0, sub: D.edges.length + ' links' }, drillOpen ? function (b) { b.appendChild(h('p', { class: 'p-empty' }, 'Map paused while a panel is open')); } : networkPanel, 'map'),
+      panel('network', 'Network', { n: (function () { var k = 0; D.nodes.forEach(function (x, id) { if (!H.isUs(id) && !H.refHidden(id)) k++; }); return k; })(), unit: 'on the map', bad: 0, warn: 0, sub: D.edges.length + ' links' }, drillOpen ? function (b) { b.appendChild(h('p', { class: 'p-empty' }, 'Map paused while a panel is open')); } : networkPanel, 'map'),
       panel('state', 'Product and market', H.stateHead(), H.statePanel));
     root.appendChild(wall);
     root.appendChild(h('p', { class: 'talk' }, 'This wall only shows. To change anything, tell Grok.'));

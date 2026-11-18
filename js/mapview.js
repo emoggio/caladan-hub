@@ -21,7 +21,7 @@
   /* A route or selection may involve background-reference nodes: switch the landscape on so they have a place. */
   function ensureVisible(ids) {
     if (S.landscape) return;
-    if (ids.some(function (id) { var n = H.data.nodes.get(id); return n && n._.ref; })) { S.landscape = true; S.autoLand = true; }
+    if (ids.some(H.refHidden)) { S.landscape = true; S.autoLand = true; }
   }
 
   H.mapSelect = function (id) { S.sel = id; S.route = ''; S.extra = null; ensureVisible([id]); layout(); focus([id], 1.6); H.go('map'); };
@@ -276,7 +276,7 @@
     if (S.key == null) S.key = window.innerWidth >= 1100;
     computeRoutes();
     /* the landscape was only switched on to show a route or a profile: put it away again afterwards */
-    if (S.autoLand && !routes && !(S.sel && H.data.nodes.get(S.sel) && H.data.nodes.get(S.sel)._.ref)) { S.landscape = false; S.autoLand = false; S.view = null; }
+    if (S.autoLand && !routes && !(S.sel && H.refHidden(S.sel))) { S.landscape = false; S.autoLand = false; S.view = null; }
     layout();
     var lensNow = H.lensByKey(S.lens);
     var three = !!S.three && !S.small;

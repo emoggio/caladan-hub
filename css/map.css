@@ -92,8 +92,8 @@
 .net-link.k-competes { stroke-dasharray: 3 3; }
 .net-strong { stroke: var(--s1, #3987e5); stroke-width: 2; opacity: .9; }
 .net-strong.k-competes { stroke-dasharray: 4 3; }
-.net-tag-bg { fill: var(--bg, #0b0f14); opacity: .85; }
-.net-tag { font: 600 9.5px var(--font-display, Manrope, sans-serif); fill: var(--text, #e8edf2); letter-spacing: .02em; }
+.net-tag-bg { fill: var(--surface); opacity: .9; }
+.net-tag { font: 600 9.5px var(--font-display, Manrope, sans-serif); fill: var(--ink); letter-spacing: .02em; }
 
 /* 3D map (map3d.js): dark space, labels that never overlap, the territory titles in capitals */
 .map-stage.is-3d { background: #05070d; border-color: #1a2230; }
