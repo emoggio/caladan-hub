@@ -12,18 +12,32 @@
   function snap(rows) { return { size: rows.length, empty: !rows.length, docs: rows.map(wrap) }; }
   function check(res) { if (res.error) throw res.error; return res.data || []; }
 
-  function Query(col, filters, order, lim) { this.col = col; this.filters = filters || []; this.ord = order || null; this.lim = lim || 1000; }
+  var PAGE = 1000;   /* the database returns at most 1000 rows per request */
+  function Query(col, filters, order, lim) { this.col = col; this.filters = filters || []; this.ord = order || null; this.lim = lim || 0; }   /* 0 = everything */
   Query.prototype.where = function (f, op, v) {
     if (op !== '==' && op !== 'eq') throw new Error('only == filters are supported');
     return new Query(this.col, this.filters.concat([[f, v]]), this.ord, this.lim);
   };
   Query.prototype.orderBy = function (f, dir) { return new Query(this.col, this.filters, [f, dir || 'asc'], this.lim); };
-  Query.prototype.limit = function (n) { return new Query(this.col, this.filters, this.ord, Math.min(n, 1000)); };
-  Query.prototype.run = function () {
+  Query.prototype.limit = function (n) { return new Query(this.col, this.filters, this.ord, Math.min(n, PAGE)); };
+  Query.prototype.page = function (from, to) {
     var q = sb.from('docs').select(FIELDS).eq('collection', this.col);
     this.filters.forEach(function (f) { q = q.eq('data->>' + f[0], typeof f[1] === 'string' ? f[1] : JSON.stringify(f[1])); });
     if (this.ord) q = q.order('data->>' + this.ord[0], { ascending: this.ord[1] !== 'desc', nullsFirst: false });
-    return q.limit(this.lim).then(check);
+    return q.order('id').range(from, to).then(check);   /* id keeps pages stable */
+  };
+  /* With limit(): one request. Without: read page after page until the collection is exhausted. */
+  Query.prototype.run = function () {
+    var self = this;
+    if (self.lim) return self.page(0, self.lim - 1);
+    var all = [];
+    function next(from) {
+      return self.page(from, from + PAGE - 1).then(function (rows) {
+        all = all.concat(rows);
+        return rows.length < PAGE ? all : next(from + PAGE);
+      });
+    }
+    return next(0);
   };
   Query.prototype.get = function () { return this.run().then(snap); };
   /* Live: re-read the query whenever any record in its collection changes (debounced). */

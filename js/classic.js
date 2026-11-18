@@ -41,6 +41,8 @@
     }).then(function (html) {
       var doc = new DOMParser().parseFromString(html, 'text/html');
       document.body.innerHTML = '';
+      /* the hub's own stylesheets would restyle the classic page (hidden labels, padded boxes): drop them */
+      Array.prototype.slice.call(document.head.querySelectorAll('link[rel="stylesheet"], style')).forEach(function (n) { n.remove(); });
       if (doc.title) document.title = doc.title;
       var frag = document.createDocumentFragment();
       /* styles and the page's own content, in source order (head first, then body) */
