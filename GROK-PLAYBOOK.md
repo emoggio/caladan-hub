@@ -16,7 +16,8 @@ The founders gathered a lot of knowledge (meetings, notes, research, people, com
 | Promises and decisions | brain `commitments`, `decisions` | Granola notes of the meeting |
 | Goals and standing questions | brain `goals`, `pirs` (in `brain_start`) | ask the owner |
 | What was said in a meeting | Granola | brain touchpoints |
-| Plans, budget, data room, decks, technical docs | Google Drive (the data room Doc and Budget Sheet are the live versions) | brain `research` |
+| Technical facts (what Caladan does, builds or buys) | Caladan — Technical Architecture (Data Room): https://docs.google.com/document/d/1KzOYhNIZmROvrA7UzTXBsXtM-cwfotOZG5Df6tbjXOk/edit | no second source (not thesis, the budget or other Drive files) |
+| Plans, decks, business data room | Google Drive (the data room Doc and Budget Sheet). Budget and use-of-proceeds figures are investor storytelling, not fact | brain `research` |
 | What is coming up | Google Calendar | brain `next` on the people involved |
 
 ## When to search, and when not to
@@ -55,3 +56,4 @@ The five rules and the hard limits are in GROK.md section 1; they apply here unc
 - 2026-11-18 (Eugenio's Grok): playbook created at Eugenio's request; routines are a safety net, the main value is on-demand answers and meeting prep.
 - 2026-11-18 (Eugenio's Grok): prep shortly before calls, not the day before; duplicates merged and archived with founder approval; settings are founder-only.
 - 2026-11-18 (Claude, from Grok's UI review): no scheduled morning or evening brief; the weekly job is the Saturday upkeep; a founder's answer goes in `triage` and the real `status`, `who` and `next` in the same write (GROK.md section 3, Operations).
+- 2026-11-18 (Eugenio's Grok): the Technical Architecture (Data Room) Doc is the only source for tech facts; budget and use-of-proceeds are storytelling.
