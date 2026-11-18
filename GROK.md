@@ -84,7 +84,9 @@ Each record lives in a **collection** and has an **id**. Dates are `YYYY-MM-DD`;
 | `firstContact`, `lastContact` | dates |
 | `next` | the one next step: `{date, action, kind, who, status}`; `status` `open`, `done` or `dropped` |
 | `owner` | `eugenio`, `alex` or `both` |
-| `fin`, `caps`, `fund` | money, capabilities, funding details when known |
+| `fin` | company money: `{fundingUSD, lastRound{amountUSD,date,lead,type}, investors[], staff, founded, source}` |
+| `caps` | for rivals and us: twelve scores 0-3, keys `se phys ew cuas auto fpv bms aar ukr accr usv oem` (synthetic env, flight physics, EW, counter-UAS, autonomy data, FPV training, BMS link, replay, Ukraine data, accreditation, maritime, OEM library). `n_caladan` holds ours. |
+| `fund` | for a funding scheme: amount, deadline, eligibility |
 
 Id prefixes: `n_` people and organisations the founders deal with; `c_` companies (competitors, investors, primes); `s_` simulation products and rivals; `r_`, `fd_`, `ndf_` reference landscape (agencies, funds by country, non-dilutive funding schemes). Reference records are context, not relationships; leave them out of counts of "who we know".
 
@@ -112,8 +114,8 @@ Id prefixes: `n_` people and organisations the founders deal with; `c_` companie
 
 ### Market
 
-- `signals`: dated market events. `{kind, title, date, source, url, note, nodes[], segment, geo, amountUSD}`. `kind`: round, contract, product, programme, policy, window, fund, partnership, event, press. Id `sg_<slug>_<yyyymmdd>`.
-- `valuations`: `{company, node, stage, date, note, source, grade}`: rounds and valuations of comparable companies.
+- `signals`: dated market events. `{kind, title, date, source, url, note, nodes[], segment, geo, amountUSD}`. `kind`: round, contract, product, programme, policy, window, fund, partnership, event, press. `segment`: one of `fpv-training`, `synthetic-env`, `autonomy`, `counter-uas`, `oem-drones`, `maritime`, `policy` (budgets, policy and fund closes). Put the amount in US dollars in `amountUSD` for every round and contract. Id `sg_<slug>_<yyyymmdd>`.
+- `valuations`: one record per funding round of a comparable company. `{company, node, stage, date, amountUSD, valuationUSD, lead, source, grade, like}`. `stage` as written (Pre-seed, Seed, Series A…). `like: true` marks a company like us; our own ask is a record with `node: "n_caladan"`.
 - `research`: `{q, why, answer, sources, status}`: research questions and answers. Answer only when a founder asks; do not run, queue or sweep them on your own.
 - `findings`: alerts that are dismissed or acted on. Not a research queue.
 
@@ -162,4 +164,18 @@ Always write your own status record at the end of a run, truthfully: `lastAttemp
 
 ## 6. The control room
 
-`https://emoggio.github.io/caladan-hub/` is the only control room. It reads from the database, which is the single master: system lights (from `status`), what needs doing, goals, customers, raise, product and the network map. It is for looking; you do not need it. The old claude.ai hub is retired; do not point anyone there or treat it as live. If a founder says a light is red, check `status` and `brain_changes`.
+`https://emoggio.github.io/caladan-hub/` is the only control room; the database is the single master and the old claude.ai hub is retired (do not point anyone there). The page only reads; you never need it, but the charts are only as good as the fields you fill. If a founder says a light is red or a chart looks wrong, check `status`, `brain_changes` and the fields below.
+
+| Panel (opens to) | Draws | From |
+|---|---|---|
+| Systems (run history) | a light per routine; a dot per day it ran or failed | `status`, `activity` |
+| Needs doing (due by owner and age) | every open next step, by founder and days late | `next` on opportunities, raise, nodes; `commitments` |
+| Goals (timeline) | progress against target, time left | `goals.current`, `target`, `by`, `createdAt` |
+| Customers, Raise (boards) | one column per stage, a card per record, red when the step is late | `stage`, `next{date,action,who}`, `goalId` |
+| Network (2D or 3D map) | direction = kind of organisation, distance from centre = how recently we spoke, colour = which founder | `nodes`, `edges`, `touchpoints`, `lastContact`, `owner` |
+| Market | money by quarter and segment; which segments are heating up; latest signals | `signals.date`, `kind`, `segment`, `amountUSD` |
+| Rivals | overlap with us against money raised; capability matrix | `nodes.caps`, `nodes.fin.fundingUSD` |
+| Rounds | what companies like us raised; valuations over time | `valuations` |
+| Product | user needs behind each roadmap item; standing questions | `needs`, `roadmap`, `pirs` |
+
+A record missing one of these fields simply drops out of that chart. When you add a rival, give it `caps`; when you add a round or contract, give it `amountUSD` and a `segment` from the list in section 3.

@@ -4,7 +4,7 @@
   var D = H.data = {
     ready: false, nodes: new Map(), edges: [], signals: [],
     status: [], activity: [], settings: {},
-    goals: [], pirs: [], needs: [], opportunities: [], raise: [], roadmap: [], decisions: [], commitments: [],
+    goals: [], pirs: [], needs: [], valuations: [], opportunities: [], raise: [], roadmap: [], decisions: [], commitments: [],
     people: [], truncated: []
   };
   var NODE_TYPES = ['person', 'org', 'military', 'programme'];
@@ -33,7 +33,7 @@
 
   /* The company-brain collections are small. Dated ones are read newest first; any of them may be empty or absent. */
   var ONCE = ['pirs'];
-  var LIVE = ['status', 'goals', 'needs', 'opportunities', 'raise', 'roadmap', 'decisions', 'commitments', 'activity'];
+  var LIVE = ['status', 'goals', 'needs', 'opportunities', 'raise', 'roadmap', 'decisions', 'commitments', 'activity', 'valuations'];
   var NEWEST = { activity: ['date', 20] };
   function query(db, name) {
     var q = db.collection(name), o = NEWEST[name];

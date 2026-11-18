@@ -51,27 +51,31 @@
   function card(key, rec, why) {
     var nx = H.liveNext(rec), late = lateDays(rec);
     return h('li', { class: 'row deal' },
-      h('div', { class: 'row-main' }, h('b', null, nameOf(key, rec)), ' ', H.goalChip(rec.goalId), why ? h('span', { class: 'chip warn' }, why) : null,
+      h('div', { class: 'row-main' }, h('div', { class: 'deal-h' }, h('b', null, nameOf(key, rec)), H.goalChip(rec.goalId), why ? h('span', { class: 'chip warn' }, why) : null),
         h('div', { class: 'row-sub' }, nx ? [h('i', { class: 'lab' }, 'Next'), ' ' + H.clip(nx.action, 110), nx.date ? h('span', { class: late ? 'late' : 'kv' }, ' · ' + H.fmtDate(nx.date) + (late ? ', ' + late + 'd late' : '')) : null, nx.who ? h('span', { class: 'kv' }, ' · ' + H.whoText(nx.who)) : null] : h('span', { class: 'kv' }, 'No next step')),
         h('div', { class: 'row-facts' }, key === 'opp'
           ? [fact('Champion', H.who(rec.champion)), rec.budgetHolder ? fact('Budget', H.who(rec.budgetHolder)) : fact('Budget', 'nobody named', 'warn-t'), fact('Deadline', rec.deadline ? H.fmtDate(rec.deadline) : ''), fact('Route', rec.vehicle), fact('Incumbent', rec.incumbent)]
           : [fact('Asked', rec.asked), fact('Objection', rec.objection, 'warn-t'), fact('Cheque', rec.cheque), fact('Lead', rec.owner ? H.whoText(rec.owner) : '')]),
         rec.notes ? h('div', { class: 'kv' }, H.clip(rec.notes, 160)) : null, H.sources(evList(rec))));
   }
+  function mini(key, rec) {
+    var nx = H.liveNext(rec), late = lateDays(rec), open = S.open === rec.id, o = H.ownerOf(nx && nx.who || rec.owner || '');
+    return h('li', null, h('button', { type: 'button', class: 'bcard' + (late > 30 ? ' bad' : late ? ' warn' : '') + (open ? ' open' : ''), 'aria-expanded': String(open),
+      onclick: function () { S.open = open ? '' : rec.id; H.render(); } },
+      h('b', null, H.clip(nameOf(key, rec).split(':')[0], 48)),
+      h('span', { class: 'bc-next' }, nx ? H.clip(nx.action, 80) : 'No next step'),
+      h('span', { class: 'bc-meta' }, late ? h('span', { class: 'age-tag num ' + (late > 30 ? 'bad' : 'warn') }, late + 'd late') : nx && nx.date ? h('span', { class: 'kv' }, H.fmtDate(nx.date)) : null,
+        H.goalChip(rec.goalId), o !== 'unassigned' ? h('span', { class: 'own o-' + o }, H.whoText(o)) : null)),
+      open ? h('ul', { class: 'rows bc-x' }, card(key, rec, '')) : null);
+  }
   H.pipeDrill = function (key, box) {
     var p = H.pipe(key), b = BOARDS[key];
     if (!p.total) { box.appendChild(h('p', { class: 'p-empty' }, 'No cards yet. They are filed by the bots and the daily jobs.')); return; }
     box.appendChild(h('p', { class: 'p-say' }, p.open + ' open · ' + p.won + ' ' + p.wonWord + ' · ' + p.moves.length + ' need a move · oldest overdue ' + (p.oldest ? p.oldest + 'd' : 'none')));
-    if (p.moves.length) box.appendChild(h('section', { class: 'd-block' }, h('h3', { class: 'eyebrow' }, 'Need a move', h('span', { class: 'num' }, p.moves.length)),
-      h('ul', { class: 'rows' }, p.moves.slice(0, S.all[key + 'm'] ? 40 : 5).map(function (m) { return card(key, m.rec, m.why); })),
-      p.moves.length > 5 && !S.all[key + 'm'] ? h('button', { class: 'more', type: 'button', onclick: function () { S.all[key + 'm'] = true; H.render(); } }, 'All ' + p.moves.length) : null));
-    p.stages.forEach(function (st) {
-      if (!st.n) return;
-      var open = S.all[key + st.key];
-      box.appendChild(h('section', { class: 'd-block' }, h('h3', { class: 'eyebrow' }, st.name, h('span', { class: 'num' }, st.n)),
-        h('ul', { class: 'rows' }, st.list.slice(0, open ? st.n : 4).map(function (r) { return card(key, r, ''); })),
-        st.n > 4 && !open ? h('button', { class: 'more', type: 'button', onclick: function () { S.all[key + st.key] = true; H.render(); } }, 'All ' + st.n) : null));
-    });
+    box.appendChild(h('div', { class: 'board', style: 'grid-template-columns: repeat(' + p.stages.length + ', minmax(150px, 1fr))' }, p.stages.map(function (st) {
+      var list = st.list.slice().sort(function (x, y) { return lateDays(y) - lateDays(x); });
+      return h('div', { class: 'bcol' + (st.won ? ' won' : '') }, h('h4', null, st.name, h('span', { class: 'num' }, st.n)), list.length ? h('ul', null, list.map(function (r) { return mini(key, r); })) : h('p', { class: 'kv' }, 'None'));
+    })));
     var out = (H.data[b.col] || []).filter(function (r) { return stageOf(b, r) === b.out[0]; });
     if (out.length) box.appendChild(h('section', { class: 'd-block' }, h('h3', { class: 'eyebrow' }, b.out[1], h('span', { class: 'num' }, out.length)), h('p', { class: 'kv' }, out.map(function (r) { return nameOf(key, r); }).join(' · '))));
   };

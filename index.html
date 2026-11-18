@@ -9,18 +9,15 @@
 <script>
 /* Settings a future edit is most likely to touch. */
 window.HUB = {
-  classicFile: 'classic.html',   /* the old 3D map, published beside this page; '' if not published */
-  classicUrl: 'https://claude.ai/artifact/AYyB7NKWxykBVuiBzNnkz3', /* used when classicFile is '' */
   founders: { eugenio: { id: 'n_eugenio', name: 'Eugenio' }, alex: { id: 'n_alex', name: 'Alex' } },
   company: 'n_caladan',
   coldAfterDays: 30
 };
-window.H = { classic: location.hash === '#classic' && !!window.HUB.classicFile };
+window.H = {};
 </script>
 <script src="js/config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="js/supa.js"></script>
-<script src="js/classic.js"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/views.css">
@@ -63,7 +60,6 @@ window.H = { classic: location.hash === '#classic' && !!window.HUB.classicFile }
   </main>
 
   <footer class="foot">
-    <a id="classic-link" href="#classic">Classic 3D map</a>
     <span id="foot-note"></span>
     <a href="#" onclick="window.brainSignOut&&brainSignOut();return false">Sign out</a>
   </footer>
@@ -78,6 +74,7 @@ window.H = { classic: location.hash === '#classic' && !!window.HUB.classicFile }
 <script src="js/confirm.js"></script>
 <script src="js/backlog.js"></script>
 <script src="js/pipes.js"></script>
+<script src="js/charts.js"></script>
 <script src="js/state.js"></script>
 <script src="js/search.js"></script>
 <script src="js/people.js"></script>
@@ -86,6 +83,7 @@ window.H = { classic: location.hash === '#classic' && !!window.HUB.classicFile }
 <script src="js/maplayout.js"></script>
 <script src="js/maplens.js"></script>
 <script src="js/mapview.js"></script>
+<script src="js/map3d.js"></script>
 <script src="js/wall.js"></script>
 <script src="js/drill.js"></script>
 <script src="js/app.js"></script>

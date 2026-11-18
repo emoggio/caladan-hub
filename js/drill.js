@@ -4,7 +4,7 @@
 (function () {
   var H = window.H, h = H.h;
   var S = { tab: 'steps', open: '', shown: 20, arm: '' };
-  var TITLES = { systems: 'Systems', goals: 'Goals', customers: 'Customers', raise: 'Raise', todo: 'Needs doing', state: 'Product and market' };
+  var TITLES = { systems: 'Systems', goals: 'Goals', customers: 'Customers', raise: 'Raise', todo: 'Needs doing', state: 'Market and product' };
   var OWNER = { eugenio: 'Eugenio', alex: 'Alex', both: 'Both', unassigned: 'No owner' };
   H.drills = Object.keys(TITLES);
   H.openTodo = function (tab) { if (tab === 'systems') return H.go('systems'); S.tab = tab || 'steps'; S.open = ''; S.shown = 20; S.arm = ''; if (H.view === 'todo') H.render(); else H.go('todo'); };
@@ -54,6 +54,7 @@
   }
   function todo(box) {
     var b = H.backlog(), props = H.proposals();
+    if (b.steps.length) box.appendChild(H.chartDue(b.steps));
     var tabs = [['steps', 'All due', b.steps.length], ['orphans', 'No owner or no goal', b.orphans.length], ['stale', 'Stale 30 d +', b.stale.length], ['proposals', 'Awaiting yes / no', props.length], ['promises', 'Promises', b.promises.length]];
     box.appendChild(h('div', { class: 'tabs2', role: 'group', 'aria-label': 'Which list' }, tabs.map(function (t) {
       return h('button', { type: 'button', 'aria-pressed': String(S.tab === t[0]), onclick: function () { S.tab = t[0]; S.open = ''; S.shown = 20; S.arm = ''; H.render(); } }, t[1], ' ', h('b', { class: 'num' }, t[2]));
@@ -65,7 +66,8 @@
     else stepList(box, b.steps, 'Nothing is due', '');
   }
 
-  var BUILD = { systems: function (b) { H.systemsDrill(b); }, goals: function (b) { H.goalsDrill(b); }, customers: function (b) { H.pipeDrill('opp', b); }, raise: function (b) { H.pipeDrill('raise', b); }, todo: todo, state: function (b) { H.stateDrill(b); } };
+  function chart(b, el) { if (el) b.appendChild(el); }
+  var BUILD = { systems: function (b) { chart(b, H.chartRuns()); H.systemsDrill(b); }, goals: function (b) { chart(b, H.chartGoals(H.data.goals)); H.goalsDrill(b); }, customers: function (b) { H.pipeDrill('opp', b); }, raise: function (b) { H.pipeDrill('raise', b); }, todo: todo, state: function (b) { H.stateDrill(b); } };
   H.drillView = function (root, key) {
     var body = h('div', { class: 'd-body' }), last = H.lastAction();
     try { BUILD[key](body); } catch (e) { console.error(e); body.appendChild(h('p', { class: 'p-empty' }, 'This list could not be drawn')); }

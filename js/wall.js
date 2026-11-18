@@ -44,8 +44,9 @@
     H.afterRender(function () {
       if (!radar.isConnected || radar.clientHeight < 60) return;
       var keep = { list: M.list, key: M.key, sel: M.sel, route: M.route, extra: M.extra };
-      M.list = false; M.key = false; M.sel = ''; M.route = ''; M.extra = null; M.view = null;
+      M.list = false; M.key = false; M.sel = ''; M.route = ''; M.extra = null; M.view = null; M.small = true;   /* the wall's thumbnail is always 2D */
       try { H.views.map(radar); } catch (e) { console.error(e); }
+      M.small = false;
       M.list = keep.list; M.key = keep.key; M.sel = keep.sel; M.route = keep.route; M.extra = keep.extra;
     });
   }

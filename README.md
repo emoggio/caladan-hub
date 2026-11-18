@@ -1,3 +1,9 @@
 # Caladan hub: control room
 
-Read-mostly control room for the Caladan brain. Static page; all data lives in Supabase and is visible only to the two founders after sign-in. No data is stored in this repository.
+A read-only web page for the two founders, over the Caladan brain (a Supabase database; no data lives in this repository).
+
+Bots and other AIs read two files, both once per session:
+- **[GROK.md](GROK.md)**: the reference. How to reach the brain, the data model, what to do on each trigger, the health check, and which fields each chart on the page reads.
+- **[GROK-PLAYBOOK.md](GROK-PLAYBOOK.md)**: judgement. When and where to look, meeting prep, staying quiet unless it helps, and dated lessons any bot may append.
+
+Page code: `index.html`, `js/` (one file per panel; `charts.js` draws the charts, `map3d.js` the 3D map), `css/`.

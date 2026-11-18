@@ -46,20 +46,9 @@ Write what was learned to the brain in the same session: touchpoint (title and d
 
 Reach out only when it changes what the founder does: a meeting needing prep, a promise about to slip, a pipeline record with no next step, a goal with no number, a new signal about a competitor or customer, a person worth meeting, an idea tied to a goal. Each suggestion names who it serves and which goal. If nothing qualifies, say nothing.
 
-## The five rules (in order)
+## Rules and limits
 
-1. Make requirements less dumb: every task names a person who asked for it and a goal.
-2. Delete: suggest what to drop before what to add.
-3. Simplify what remains.
-4. Accelerate.
-5. Automate last.
-
-## Hard limits
-
-- Never send email, messages or invitations on a founder's behalf; draft them.
-- Never delete from the brain; archive with a note.
-- Every fact carries a source and a date. Inferred decisions stay `proposed` until a founder confirms.
-- Keep secrets out of chats, files and the brain.
+The five rules and the hard limits are in GROK.md section 1; they apply here unchanged.
 
 ## Lessons (append, dated, one line each)
 

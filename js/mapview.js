@@ -2,7 +2,9 @@
 (function () {
   var H = window.H, h = H.h, HUB = window.HUB;
   var NS = 'http://www.w3.org/2000/svg';
-  var S = H.mapState = { lens: 'attention', landscape: false, sel: '', route: '', view: null };
+  var S = H.mapState = { lens: 'attention', landscape: false, sel: '', route: '', view: null, three: false };
+  try { S.three = localStorage.getItem('hub-map-3d') === '1'; } catch (e) { /* storage blocked: start in 2D */ }
+  function set3d(on) { S.three = on; try { localStorage.setItem('hub-map-3d', on ? '1' : '0'); } catch (e) { /* not remembered */ } H.render(); }
   var L = null, key = '', el = {}, routes = null, hi = {}, hover = null, raf = 0, fitK = 1, links = [], net = [];
 
   function s(tag, attrs, text) {
@@ -277,7 +279,11 @@
     if (S.autoLand && !routes && !(S.sel && H.data.nodes.get(S.sel) && H.data.nodes.get(S.sel)._.ref)) { S.landscape = false; S.autoLand = false; S.view = null; }
     layout();
     var lensNow = H.lensByKey(S.lens);
+    var three = !!S.three && !S.small;
     var bar = h('div', { class: 'map-bar' },
+      h('div', { class: 'seg', role: 'group', 'aria-label': 'Map style' },
+        h('button', { type: 'button', 'aria-pressed': String(!three), onclick: function () { if (three) set3d(false); } }, '2D'),
+        h('button', { type: 'button', 'aria-pressed': String(three), onclick: function () { if (!three) set3d(true); } }, '3D')),
       h('div', { class: 'lenses', role: 'group', 'aria-label': 'What to highlight' }, H.lenses.map(function (l) {
         return h('button', { class: 'pill', type: 'button', 'aria-pressed': String(!routes && l.key === S.lens),
           onclick: function () { S.lens = l.key; S.route = ''; S.extra = null; S.view = null; H.render(); } }, l.label);
@@ -290,10 +296,11 @@
     var svg = s('svg', { class: 'map-svg', role: 'img', 'aria-label': 'Map of the Caladan network. Use search to reach any person or organisation.' });
     el.world = s('g', {}); el.over = s('g', { class: 'over' });
     svg.appendChild(el.world); svg.appendChild(el.over); el.stage.appendChild(svg);
+    if (three) svg.style.display = 'none';
     el.stage.appendChild(h('div', { class: 'map-zoom' },
-      h('button', { class: 'btn', type: 'button', 'aria-label': 'Zoom in', onclick: function () { var z = size(); zoomAt(z.w / 2, z.h / 2, 1.5); } }, '+'),
-      h('button', { class: 'btn', type: 'button', 'aria-label': 'Zoom out', onclick: function () { var z = size(); zoomAt(z.w / 2, z.h / 2, 1 / 1.5); } }, '−'),
-      h('button', { class: 'btn', type: 'button', onclick: function () { S.view = fit(); apply(); } }, 'Reset'),
+      h('button', { class: 'btn', type: 'button', 'aria-label': 'Zoom in', onclick: function () { if (three) return H.map3dZoom(1.4); var z = size(); zoomAt(z.w / 2, z.h / 2, 1.5); } }, '+'),
+      h('button', { class: 'btn', type: 'button', 'aria-label': 'Zoom out', onclick: function () { if (three) return H.map3dZoom(1 / 1.4); var z = size(); zoomAt(z.w / 2, z.h / 2, 1 / 1.5); } }, '−'),
+      h('button', { class: 'btn', type: 'button', onclick: function () { if (three) return H.map3dReset(); S.view = fit(); apply(); } }, 'Reset'),
       h('button', { class: 'btn', type: 'button', 'aria-pressed': String(!!S.key), onclick: function () { S.key = !S.key; H.render(); } }, S.key ? 'Hide key' : 'Key')));
     var side = panel(), wasSheet = el.sheet;
     el.sheet = !!side && window.matchMedia('(max-width: 760px)').matches;
@@ -315,6 +322,10 @@
         : 'No one either of you has spoken with is linked to them within three steps.'].forEach(function (c) { say.appendChild(c.nodeType ? c : document.createTextNode(c)); });
     } else lens.say(hit, L).forEach(function (c) { say.appendChild(c.nodeType ? c : document.createTextNode(String(c))); });
 
+    if (three) {
+      H.map3d(el.stage, L, { hi: hi, sel: S.sel, route: !!routes, pick: function (id) { S.sel = id; if (id) ensureVisible([id]); H.render(); } });
+      return;
+    }
     if (S.pendingFocus) { var pf = S.pendingFocus; S.pendingFocus = null; S.view = null; fit(); focus(pf.ids, pf.zoom); }
     if (routes && !S.view) { fit(); focus(routes.ids.concat([HUB.company]), 1); }
     if (!S.view) S.view = fit(); else fit();

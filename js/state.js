@@ -48,8 +48,24 @@
           : h('p', { class: 'p-empty' }, 'No standing questions')),
       h('div', { class: 'pm-col wide' }, h('h3', { class: 'p-sub' }, 'Rivals and money, newest'), feed.length ? h('ul', { class: 'ticks' }, feed.map(sigRow)) : h('p', { class: 'p-empty' }, 'No signals recorded'))));
   };
+  /* the drill-in has four tabs: the market in charts, rivals, comparable rounds, and the product plan */
+  var TABS = [['market', 'Market'], ['rivals', 'Rivals'], ['rounds', 'Rounds'], ['product', 'Product']];
   H.stateDrill = function (box) {
-    var m = model();
+    var m = model(); S.tab = S.tab || 'market';
+    box.appendChild(h('div', { class: 'tabs2', role: 'group', 'aria-label': 'Which view' }, TABS.map(function (t) {
+      return h('button', { type: 'button', 'aria-pressed': String(S.tab === t[0]), onclick: function () { S.tab = t[0]; H.render(); } }, t[1]);
+    })));
+    if (S.tab === 'market') {
+      box.appendChild(H.chartMoney()); box.appendChild(H.chartHeat());
+      box.appendChild(h('section', { class: 'd-block' }, h('h3', { class: 'eyebrow' }, 'Latest signals', h('span', { class: 'num' }, m.sigs.length)), h('ul', { class: 'ticks' }, m.sigs.slice(0, S.allSig ? 200 : 15).map(sigRow)),
+        m.sigs.length > 15 && !S.allSig ? h('button', { class: 'more', type: 'button', onclick: function () { S.allSig = true; H.render(); } }, 'All ' + m.sigs.length) : null));
+      return;
+    }
+    if (S.tab === 'rivals') { box.appendChild(H.chartPositioning()); box.appendChild(H.chartCaps()); return; }
+    if (S.tab === 'rounds') { box.appendChild(H.chartLikeUs()); box.appendChild(H.chartValuations()); return; }
+    productDrill(box, m);
+  };
+  function productDrill(box, m) {
     function need(n) {
       return h('li', { class: 'row' }, h('span', { class: 'q' }, n.statement || 'No statement'), n.status === 'proposed' ? h('span', { class: 'chip warn' }, 'unchecked') : null,
         h('div', { class: 'kv' }, n.who ? H.who(n.who) : 'Someone', n.org && H.data.nodes.has(n.org) ? [' · ', H.who(n.org)] : null, n.date ? ' · ' + H.fmtDate(n.date) : ''));
@@ -66,6 +82,5 @@
       box.appendChild(H.fold(S, 'q' + q.id, q.text, function (b) { b.appendChild(q.hits.length ? h('ul', { class: 'ticks' }, q.hits.slice(0, 15).map(sigRow)) : h('p', { class: 'p-empty' }, 'No evidence filed yet')); },
         (q.fresh ? '+' + q.fresh + ' in 14 d · ' : '') + q.hits.length + ' on file'));
     });
-    box.appendChild(H.fold(S, 'feed', 'All signals, newest first', function (b) { b.appendChild(h('ul', { class: 'ticks' }, m.sigs.slice(0, 80).map(sigRow))); }, String(m.sigs.length)));
   };
 })();

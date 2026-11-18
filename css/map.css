@@ -90,3 +90,17 @@
 .net-strong.k-competes { stroke-dasharray: 4 3; }
 .net-tag-bg { fill: var(--bg, #0b0f14); opacity: .85; }
 .net-tag { font: 600 9.5px var(--font-display, Manrope, sans-serif); fill: var(--text, #e8edf2); letter-spacing: .02em; }
+
+/* 3D map (map3d.js): dark space, labels that never overlap, the territory titles in capitals */
+.map-stage.is-3d { background: #05070d; border-color: #1a2230; }
+.map3d, .map3d-gl { position: absolute; inset: 0; }
+.map3d-labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.m3l { position: absolute; left: 0; top: 0; white-space: nowrap; font: 600 11.5px var(--font-body); color: #c9d2dc;
+  text-shadow: 0 0 3px #000, 0 0 8px rgb(0 0 0 / .85); will-change: transform; }
+.m3l.p { font-weight: 500; color: #a9b4bf; }
+.m3l.core { color: #fff; font: 700 12px var(--font-display); }
+.m3l.sel, .m3l.hov { color: #fff; font-size: 13.5px; }
+.m3l.title { font: 700 10.5px var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: #8fb3ff; opacity: .8; }
+.map3d-tip { font: 500 12px var(--font-body); color: #fff; background: rgb(10 14 20 / .9); padding: 3px 8px; border-radius: 6px; }
+.map3d-wait { position: absolute; inset: 0; display: grid; place-items: center; color: #8a96a3; margin: 0; }
+.map-stage.is-3d .map-zoom .btn { background: rgb(16 22 30 / .85); color: #dfe6ee; border-color: #26303d; }

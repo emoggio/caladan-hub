@@ -2,9 +2,8 @@
    Stays live: every change in the database redraws the wall and moves the "updated" tick. Keys: / search, Esc close. */
 (function () {
   var H = window.H, h = H.h, HUB = window.HUB;
-  if (H.classic) return;                       /* the classic 3D map is being shown instead */
   var FULL = { map: 1, profile: 1 };           /* screens that replace the wall; everything else is the wall or a drill-in over it */
-  var OLD = { home: 'wall', briefing: 'wall', triage: 'todo', pipeline: 'customers', product: 'state', market: 'state', review: 'wall', people: 'map', paths: 'map', hiring: 'wall', money: 'raise' };
+  var OLD = { home: 'wall', briefing: 'wall', triage: 'todo', pipeline: 'customers', product: 'state', market: 'state', review: 'wall', people: 'map', paths: 'map', classic: 'map', hiring: 'wall', money: 'raise' };
   var pending = false, soon = 0, after = [];
   H.view = 'wall';
 
@@ -17,14 +16,12 @@
     if (location.hash === '#' + v) { H.view = v; H.render(); } else location.hash = v;   /* hashchange renders */
   };
   window.addEventListener('hashchange', function () {
-    if (location.hash === '#classic') return;
     var was = H.view; H.view = viewFromHash(); H.render();
     if (FULL[was] !== FULL[H.view]) window.scrollTo(0, 0);
   });
   H.afterRender = function (fn) { after.push(fn); };
 
   H.render = function () {
-    if (H.classic) return;                     /* the hub's markup is gone once the classic map is swapped in */
     pending = false; H.tick = (H.tick || 0) + 1; after = [];
     var page = document.getElementById('page'), root = document.getElementById('view'), full = !!FULL[H.view];
     page.className = 'page ' + (full ? 'is-full' : 'is-wall') + (H.view === 'map' ? ' wide' : '');
@@ -87,16 +84,13 @@
   }
 
   document.addEventListener('keydown', function (e) {
-    if (H.classic || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
     var a = document.activeElement, typing = a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
     if (e.key === '/' && !typing) { e.preventDefault(); document.getElementById('q').focus(); }
     else if (e.key === 'Escape' && !typing && H.view !== 'wall') H.go('wall');
   });
 
   function start() {
-    if (H.classic) return;                     /* the classic page re-fires the load events */
-    var link = document.getElementById('classic-link');
-    if (!HUB.classicFile) { link.href = HUB.classicUrl; link.target = '_blank'; link.rel = 'noopener'; }
     document.getElementById('master').addEventListener('click', function () { if (H.data.ready) H.go('systems'); });
     H.me = H.store.get('me') || null;
     H.view = viewFromHash();
@@ -121,10 +115,10 @@
         var D = H.data, note = D.nodes.size + ' people and organisations · ' + D.edges.length + ' links · ' + D.signals.length + ' signals · ' + D.needs.length + ' needs';
         if (D.truncated.length) note += ' · some lists were cut at 1000: ' + D.truncated.join(', ');
         document.getElementById('foot-note').textContent = note;
-        H.watch(db, function () { if (!H.classic) renderSoon(); });
-        setInterval(function () { if (!H.classic) drawTick(); }, 15000);
+        H.watch(db, function () { renderSoon(); });
+        setInterval(drawTick, 15000);
         /* lights go stale with time even when nothing changes: redraw once a minute, never while a field has focus */
-        setInterval(function () { if (!H.classic && !document.hidden) renderNow(); }, 60000);
+        setInterval(function () { if (!document.hidden) renderNow(); }, 60000);
       });
     }).catch(function (e) {
       console.error(e);
