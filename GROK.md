@@ -44,21 +44,22 @@ curl -s "$BRAIN_URL/rest/v1/rpc/brain_search" -H "apikey: $PUBLISHABLE_KEY" -H "
 
 | Function | Arguments | Returns |
 |---|---|---|
-| `brain_start` | – | collections with counts and last update, goals, source health, last 15 changes. **Call first, every session.** About 2-4k tokens. |
-| `brain_search` | `q`, optional `collections` (array), `lim` (default 20) | matches as `{doc, label, type, role}`; names first. |
-| `brain_list` | `collection`, optional `fields` (array: only these fields), `match` (JSON the record must contain, e.g. `{"type":"person"}`), `lim` (default 50, max 500), `since` (ISO time), `order_by` (a field, highest/newest first) | compact rows, each with `id`. |
+| `brain_start` | – | collections with counts and last update, goals, routine health, last 15 changes. **Call first, every session.** About 2-4k tokens. |
+| `brain_todo` | – | everything that needs doing, by the same rules as the control room: `due` steps (merged across person, organisation, card and promise, each with `late`, `owner`, `goal`, `docs`), `waiting` (proposals with no answer), `parked`, `promises` counts, pipeline `moves` with the reason, `goals` missing a number, `health` of the two routines with its state, `inbox`. About 4-5k tokens. |
+| `brain_search` | `q`, optional `collections` (array), `lim` (default 20) | matches as `{doc, label, type, role, org, last, next}`; names first. `last` and `next` usually answer "where did we leave it" without a `brain_get`. |
+| `brain_list` | `collection`, optional `fields` (array: only these fields), `match` (JSON the record must contain, e.g. `{"type":"person"}`), `lim` (default 50, max 500), `since` (ISO time), `order_by` (a field, highest/newest first), `skip` (rows to skip, to page past 500) | compact rows, each with `id`. |
 | `brain_get` | `collection`, `id` | one full record with `version`, or `{"error":"not in the brain"}`. |
-| `brain_put` | `collection`, `id`, `patch` (object), `note` (why, one line), optional `if_version` | creates the record if new, otherwise merges `patch` into it (top-level fields). `{ok, created, version}`. |
+| `brain_put` | `collection`, `id`, `patch` (object), `note` (why, one line), optional `if_version`, optional `append` (object of arrays) | creates the record if new, otherwise merges `patch` into it (top-level fields) and adds each `append` array to the end of that field. Appending `touchpoints` to a node also moves `lastContact` forward. `{ok, created, version}`. |
 | `brain_changes` | optional `since`, `lim` (default 30, max 200, newest first) | recent changes: who, which record, which fields. |
-| `brain_undo` | `n` (a change number) | puts that record back as it was before change `n`. |
+| `brain_undo` | `n` (a change number) | puts that record back as it was before change `n`. Only for your own change, and only while nothing has changed that record since; otherwise it refuses and says why. |
 
 ### Reading cheaply
 
-Three small calls answer almost anything: `brain_start`, then `brain_search` or `brain_list` with `fields`, then `brain_get` only for the records you need. Never list a whole large collection without `fields` (`brain_start` gives the counts; `nodes` and `edges` are the large ones). `brain_list` returns at most 500 rows and cannot page, so narrow it with `match` or `since`.
+Three small calls answer almost anything: `brain_start`, then `brain_search` (or `brain_todo` for anything about what needs doing), then `brain_get` only for the records you need. Never list a whole large collection without `fields` (`brain_start` gives the counts; `nodes` and `edges` are the large ones); `brain_list` returns at most 500 rows, so page with `skip` or narrow with `match` or `since`.
 
 ### Writing safely
 
-- `brain_put` merges **top-level fields**. Arrays and nested objects are replaced, not appended. To add to an array (for example a touchpoint): `brain_get` the record, append to the array, then `brain_put` the whole array back with `if_version` set to the version you read. If the answer is `changed since you read it`, read again and redo it.
+- `brain_put` merges **top-level fields**: a field you put replaces the old one whole, nested objects included (put the whole `next`, with its `status`). To add to an array, use `append`, for example `{"touchpoints":[{date, channel, who, context, ref}]}`; never read the record just to add to it. Use `if_version` when you change a field someone else may be changing; if the answer is `changed since you read it`, read again and redo it.
 - Never delete. To retire a record, set `"archived": true` and say why in `note`.
 - Every fact you write carries a **source and a date** (where it came from: an email subject, a meeting title and date, a chat with Eugenio on a date, a URL).
 - Ids are lowercase with underscores, prefixed as in section 3. Check with `brain_search` that a person or organisation is not already there (by name and by organisation) before creating one.
@@ -135,11 +136,11 @@ Id prefixes: `n_` people and organisations the founders deal with; `c_` companie
 
 **A founder asks a question**: answer from the brain. Lead with the answer, then the reason, owner and goal, then the source as `collection/id · date`. If it is not in the brain, say "not in the brain"; if you add general knowledge, say so.
 
-**A founder asks for a brief** (there is no scheduled morning or evening brief): run the health check (section 5), then at most 12 lines: **Delete** (up to 3, with the reason), **Do** (up to 3: `action · who asked · goal · why today`), **Know** (up to 2), **Missing** (up to 2), **Broken** (only if something is).
+**A founder asks for a brief** (there is no scheduled morning or evening brief): call `brain_todo` (it is the health check too), then at most 12 lines: **Delete** (up to 3, with the reason), **Do** (up to 3: `action · who asked · goal · why today`), **Know** (up to 2), **Missing** (up to 2), **Broken** (only if something is).
 
 **Calendar and email (each run)**: for meetings in the last day and the next day, and email threads with people in the brain: add touchpoints (subject or meeting title only, never email bodies), update `lastContact`, propose commitments and decisions you see, and flag new people who matter (do not create a person unless they serve a goal). Prep for an outside call goes out 30 to 60 minutes before, never the day before (see GROK-PLAYBOOK.md). Write `status/grok_email`.
 
-**Saturday upkeep (weekly)**: a clean-up of the brain, not a scoreboard. Make the fields the control room shows true: `status` and `who` on promises and decisions (from any `triage` answers), one current `next` per relationship on the pipeline card and on the person and organisation (close stale ones, never add a second), numeric `current` and `status` on goals, rivals with `caps`, rounds and contracts with `amountUSD` and `segment`. Propose duplicates for archiving. Write `status/grok_weekly`.
+**Saturday upkeep (weekly)**: a clean-up of the brain, not a scoreboard. Start from `brain_todo`: it lists exactly what the control room flags. Make the fields the control room shows true: `status` and `who` on promises and decisions (from any `triage` answers), one current `next` per relationship on the pipeline card and on the person and organisation (close stale ones, never add a second), numeric `current` and `status` on goals, rivals with `caps`, rounds and contracts with `amountUSD` and `segment`. Propose duplicates for archiving. Write `status/grok_weekly`.
 
 ---
 
@@ -147,12 +148,9 @@ Id prefixes: `n_` people and organisations the founders deal with; `c_` companie
 
 Run at the start of every routine and whenever a founder asks "is everything working":
 
-1. `brain_start`. Its `health` list has `lastSuccess` and `lastError` but not `lastAttempt`; treat a non-null `lastError` as failed and an old `lastSuccess` as stale, and report either under **Broken** with what it affects.
-2. Pipelines: `brain_list` `opportunities` and `raise` with `fields: ["name","stage","next","updatedAt"]`. Flag records with no open next step, or a `next.date` in the past.
-3. Commitments: `brain_list` `commitments` with `match: {"status":"proposed"}` and with `match: {"status":"open"}` (most are still `proposed`; matching only `open` misses them). Flag those more than 7 days past `due`.
-4. Goals: flag any with `status` `unknown` or `current` null; ask the owner for the number.
-5. Changes: `brain_changes` since your last run. Flag anything that looks wrong (a stage moving backwards, a large array suddenly shorter, a write by an unknown writer). Undo only what you wrote yourself in error; ask before undoing a founder's change.
-6. Duplicates: when you notice two records for the same person or organisation, do not merge them; tell the founders which two and propose which to archive.
+1. `brain_todo`. Report under **Broken** any `health` entry that is not `ok` (`failed`, `stale`, `never`, `skipped`) with what it affects. Its `due`, `waiting`, `moves` and `goals` lists are what the control room shows: steps overdue, proposals with no answer, pipeline cards needing a move (late step, deadline within 14 days, or no step after the first stage), goals with no number (ask the owner; never estimate).
+2. Changes: `brain_changes` since your last run. Flag anything that looks wrong (a stage moving backwards, a large array suddenly shorter, a write by an unknown writer). You can undo only your own latest change to a record; for anything else, tell the founder.
+3. Duplicates: when you notice two records for the same person or organisation, do not merge them; tell the founders which two and propose which to archive.
 
 Always write your own status record at the end of a run, truthfully: `lastAttempt` always; `lastSuccess` and `lastError: null` only if everything worked; otherwise `lastError` with the real reason.
 
@@ -176,15 +174,7 @@ Always write your own status record at the end of a run, truthfully: `lastAttemp
 
 A record missing one of these fields simply drops out of that chart. When you add a rival, give it `caps`; when you add a round or contract, give it `amountUSD` and a `segment` from the list in section 3.
 
-**Reading what the wall reads, cheaply** (never scrape the page; `brain_get` for one full record):
-
-| Panel | Call |
-|---|---|
-| Customers | `brain_list` `{"collection":"opportunities","fields":["name","stage","next","deadline","budgetHolder","owner","goalId","triage","updatedAt"],"lim":200}` |
-| Raise | same with `"collection":"raise"` and `"investorId","objection"` instead of `"name","budgetHolder"` |
-| Needs doing | `brain_list` `commitments` with `"fields":["status","who","what","due","triage","updatedAt"]`, and `decisions` with `"fields":["status","owner","decision","triage","updatedAt"]` |
-| Goals | `brain_list` `goals` with `"fields":["n","text","short","current","target","unit","status","by","owner","triage","updatedAt"]` |
-| Systems | `brain_list` `status` (all fields) |
+**Reading what the wall reads**: never scrape the page. `brain_todo` returns what Needs doing, the Customers and Raise "need a move" counts, Goals with no number and the Systems lights show, by the same rules; `brain_get` for one full record.
 
 ---
 

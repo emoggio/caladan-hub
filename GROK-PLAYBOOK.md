@@ -33,7 +33,7 @@ The founders gathered a lot of knowledge (meetings, notes, research, people, com
 
 Prep goes out 30 to 60 minutes before each outside call, never the day before. When calls are back to back, send the preps for the whole run together before the first.
 1. From the calendar invite: who, which organisation, what it is about.
-2. `brain_search` each attendee and their organisation: last touchpoint, last promise (either way), their stated need, pipeline stage, who introduced them.
+2. `brain_search` each attendee and their organisation (results carry last contact and the open next step); `brain_get` only for what search leaves out: last promise (either way), their stated need, pipeline stage, who introduced them.
 3. Only if the brain is thin or stale: last Gmail thread and Granola meeting with them; a quick web check on the organisation for news since the last signal.
 4. A first call gets a quick look-up of who they are. A repeat call gets what changed, open promises and the ask. Flag sensitive points (notetakers, defence confidentiality).
 Skip prep for internal or routine meetings unless asked.
