@@ -58,7 +58,7 @@
   function tone(n) { return n.id === cur.sel ? '#ffffff' : (cur.C[n.owner] || cur.C.none); }
   function colour(n) {
     var c = tone(n); if (lit(n)) return c;
-    var v = parseInt(c.slice(1), 16); return 'rgba(' + (v >> 16 & 255) + ',' + (v >> 8 & 255) + ',' + (v & 255) + ',0.3)';
+    var v = parseInt(c.slice(1), 16); return 'rgba(' + (v >> 16 & 255) + ',' + (v >> 8 & 255) + ',' + (v & 255) + ',0.5)';
   }
   /* every relationship stays visible: brighter between two lit bubbles, bright blue for the focus, faint only while
      something else is in focus. The alpha in the colour sets each line's opacity. */
@@ -169,7 +169,7 @@
       if (!stage.isConnected) return;
       if (!G) make();
       wait.remove(); stage.appendChild(box);
-      cur.C = { eugenio: css('--eug', '#db7322'), alex: css('--alex', '#9373ea'), both: css('--both', '#27a59b'), none: '#8a96a3', hq: '#f3f5f8' };
+      cur.C = { eugenio: css('--eug', '#ffb13b'), alex: css('--alex', '#a98bff'), both: css('--both', '#2fd6c3'), none: '#a3afbd', hq: '#f3f5f8' };
       cur.hi = opt.hi || {}; cur.pick = opt.pick; cur.route = !!opt.route;
       var selChanged = cur.sel !== (opt.sel || ''); cur.sel = opt.sel || '';
       G.width(stage.clientWidth).height(stage.clientHeight);
