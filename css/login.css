@@ -1,7 +1,10 @@
-.login { max-width: 380px; margin: 12vh auto 0; padding: 28px; border-radius: 16px; background: var(--panel, #11161c); border: 1px solid var(--line, #26303a); display: grid; gap: 12px; font-family: Manrope, system-ui, sans-serif; }
-.login h2 { margin: 0; font-size: 20px; }
-.login p { margin: 0; opacity: .8; font-size: 14px; line-height: 1.45; }
-.login input { font: inherit; font-size: 16px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line, #26303a); background: transparent; color: inherit; }
-.login button { font: inherit; font-weight: 600; padding: 10px 12px; border-radius: 10px; border: 0; cursor: pointer; background: linear-gradient(120deg, #f3c9a6, #b9a4ec 30%, #2f7cf6 62%, #3ccbd0); color: #0b0f14; }
+.login { max-width: 400px; margin: 14vh auto 0; padding: 32px 28px 26px; border-radius: var(--r-xl, 20px); background: var(--surface, #11151b); border: 1px solid var(--line, #26303a);
+  box-shadow: var(--shadow-2); display: grid; gap: 14px; font-family: var(--font-body, Manrope, system-ui, sans-serif); }
+.login h2 { margin: 0; font-size: 22px; letter-spacing: -0.02em; }
+.login p { margin: 0; color: var(--ink2, #b4bdc9); font-size: 14px; line-height: 1.5; }
+.login input { font: inherit; font-size: 16px; height: 44px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line-strong, #26303a); background: var(--bg, transparent); color: inherit; }
+.login input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.login button { font: inherit; font-weight: 700; height: 44px; border-radius: 10px; border: 0; cursor: pointer; background: var(--brand-grad); color: #0b0f14; }
+.login button:hover { filter: brightness(1.06); }
 .login button[disabled] { opacity: .6; cursor: default; }
-.login-note { min-height: 1.2em; }
+.login-note { min-height: 1.2em; font-size: 13px; }

@@ -13,10 +13,10 @@
 .map-say { max-width: none; min-height: 1.5em; }
 .map-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start; }
 .map-main.with-panel { grid-template-columns: minmax(0, 1fr) clamp(320px, 26vw, 460px); }
-.map-stage { position: relative; height: 70vh; min-height: 380px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.map-stage { position: relative; height: 72vh; min-height: 380px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-1); }
 .map-svg { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
 .map-zoom { position: absolute; right: 10px; bottom: 10px; display: flex; gap: 4px; }
-.map-zoom .btn { padding: 4px 10px; min-width: 34px; }
+.map-zoom .btn { padding: 0 10px; min-width: 34px; box-shadow: var(--shadow-2); }
 
 .ring { fill: var(--ring); stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .ring.ring-out { fill: var(--ring-out); stroke-dasharray: 3 4; }
@@ -54,7 +54,7 @@
 .sw.m-due { background: var(--surface); border: 2.5px solid var(--bad); }
 .sw.m-cold { background: var(--surface); border: 1.5px solid var(--warn); }
 
-.map-panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; display: flex; flex-direction: column; gap: 14px;
+.map-panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 14px 16px; box-shadow: var(--shadow-1); display: flex; flex-direction: column; gap: 14px;
   max-height: 70vh; overflow-y: auto; min-width: 0; font-size: 14px; }
 .map-panel .panel-close { align-self: flex-end; margin: -4px -6px -10px 0; }
 .map-panel .profile-head h2 { font-size: 22px; }

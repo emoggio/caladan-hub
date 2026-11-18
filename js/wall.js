@@ -9,14 +9,19 @@
   /* one panel: a header that states the number and a light, then the instrument */
   /* which collections each panel reads, for its "updated" stamp */
   var READS = { systems: ['status'], todo: ['commitments', 'decisions', 'opportunities', 'raise'], goals: ['goals'], customers: ['opportunities'], raise: ['raise'], network: ['nodes', 'edges'], state: ['signals', 'needs', 'roadmap'] };
+  /* the words a status chip falls back on when the panel has nothing more specific to say */
+  var WORD = { ok: 'All clear', warn: 'Needs a look', bad: 'Problem', none: 'No data yet' };
   function panel(key, title, head, build, drill) {
     var last = READS[key] ? H.newest(READS[key]) : '', upd = H.londonWhen(last), old = last && Date.now() - Date.parse(last) > 864e5;
     var lvl = head.lvl || (head.bad ? 'bad' : head.warn ? 'warn' : 'ok');
     var body = h('div', { class: 'p-body' });
     var el = h('section', { class: 'panel p-' + key, 'aria-label': title },
       h('button', { class: 'p-head', type: 'button', title: 'Open ' + title, onclick: function () { H.go(drill || key); } },
-        h('span', { class: 'p-title' }, title), h('span', { class: 'p-light lvl-' + lvl, 'aria-hidden': 'true' }),
-        h('span', { class: 'p-n num' }, head.n, h('small', null, ' ' + head.unit)), head.sub ? h('span', { class: 'p-sub2' }, head.sub) : null, upd ? h('span', { class: 'p-upd' + (old ? ' old' : ''), title: 'Newest change in what this panel reads (London time)' }, 'updated ' + upd) : null, h('span', { class: 'p-open', 'aria-hidden': 'true' }, '↗')), body);
+        h('span', { class: 'p-row' }, h('span', { class: 'p-title' }, title),
+          upd ? h('span', { class: 'p-upd' + (old ? ' old' : ''), title: 'Newest change in what this panel reads (London time)' }, 'Updated ' + upd) : null,
+          h('span', { class: 'p-open', 'aria-hidden': 'true' })),
+        h('span', { class: 'p-hero' }, h('span', { class: 'p-n num' }, head.n, h('small', null, ' ' + head.unit)),
+          h('span', { class: 'p-status lvl-' + lvl }, h('i', { class: 'p-light', 'aria-hidden': 'true' }), head.sub || WORD[lvl]))), body);
     try { build(body); } catch (e) { console.error(e); body.appendChild(h('p', { class: 'p-empty' }, 'This panel could not be drawn')); }
     return el;
   }
@@ -54,6 +59,7 @@
   H.views = H.views || {};
   H.views.wall = function (root, drillOpen) {
     var D = H.data;
+    if (!drillOpen) H.drillShown = '';
     var wall = h('div', { class: 'wall' },
       panel('systems', 'Systems', H.systemsHead(), H.systemsPanel),
       panel('goals', 'Goals', H.goalsHead(), H.goalsPanel),

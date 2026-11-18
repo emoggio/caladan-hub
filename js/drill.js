@@ -74,9 +74,11 @@
   H.drillView = function (root, key) {
     var body = h('div', { class: 'd-body' }), last = H.lastAction();
     try { BUILD[key](body); } catch (e) { console.error(e); body.appendChild(h('p', { class: 'p-empty' }, 'This list could not be drawn')); }
-    root.appendChild(h('div', { class: 'd-back', onclick: function () { H.go('wall'); } }));
-    root.appendChild(h('aside', { class: 'drill', role: 'dialog', 'aria-label': TITLES[key] },
-      h('header', { class: 'd-top' }, h('h2', null, TITLES[key]), h('button', { class: 'sw-btn', type: 'button', id: 'drill-close', onclick: function () { H.go('wall'); } }, 'Close  Esc')),
+    /* the sheet slides in only when it opens, not when live data redraws it */
+    var enter = H.drillShown !== key ? ' enter' : ''; H.drillShown = key;
+    root.appendChild(h('div', { class: 'd-back' + enter, onclick: function () { H.go('wall'); } }));
+    root.appendChild(h('aside', { class: 'drill' + enter, role: 'dialog', 'aria-label': TITLES[key] },
+      h('header', { class: 'd-top' }, h('h2', null, TITLES[key]), h('button', { class: 'd-close', type: 'button', id: 'drill-close', 'aria-label': 'Close', onclick: function () { H.go('wall'); } }, h('kbd', null, 'Esc'), h('i', { 'aria-hidden': 'true' }))),
       body,
       last ? h('footer', { class: 'd-foot' }, h('span', { class: 'kv' }, H.clip(last.label, 60)), h('button', { class: 'sw-btn', type: 'button', onclick: function () { H.undo(); } }, 'Undo')) : null));
   };
