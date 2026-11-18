@@ -185,3 +185,9 @@ A record missing one of these fields simply drops out of that chart. When you ad
 | Needs doing | `brain_list` `commitments` with `"fields":["status","who","what","due","triage","updatedAt"]`, and `decisions` with `"fields":["status","owner","decision","triage","updatedAt"]` |
 | Goals | `brain_list` `goals` with `"fields":["n","text","short","current","target","unit","status","by","owner","triage","updatedAt"]` |
 | Systems | `brain_list` `status` (all fields) |
+
+---
+
+## 7. When this file is wrong
+
+If the brain, the page or a founder contradicts this file (a field that does not exist, a status word the page does not show, a routine that no longer runs), follow what the brain actually holds, and tell the founder in one line which section is wrong and what is true instead. You cannot edit this repository; the founder has it fixed here (README.md, "Keeping it right"). Do not keep your own copy of these rules elsewhere.
