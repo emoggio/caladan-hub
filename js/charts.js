@@ -199,11 +199,11 @@
     var t0 = Math.min.apply(null, list.map(function (g) { return (H.parse(g.createdAt) || H.parse(g.by)).getTime(); }).concat([today - 30 * 864e5])), t1 = Math.max.apply(null, list.map(function (g) { return H.parse(g.by).getTime(); }).concat([today + 14 * 864e5]));
     function x(t) { return ((t - t0) / (t1 - t0) * 100).toFixed(2) + '%'; }
     return h('div', { class: 'ch-block' }, h('ul', { class: 'gtrack' }, list.map(function (g) {
-      var s = (H.parse(g.createdAt) || new Date(t0)).getTime(), e = H.parse(g.by).getTime(), late = today > e, pct = g.target && g.current != null ? Math.min(1, g.current / g.target) : null;
+      var done = g.status === 'done', s = (H.parse(g.createdAt) || new Date(t0)).getTime(), e = H.parse(g.by).getTime(), late = !done && today > e, pct = done ? 1 : g.target && typeof g.current === 'number' ? Math.min(1, g.current / g.target) : null;
       return h('li', null, h('span', { class: 'hb-l' }, 'G' + (g.n || '') + ' ' + H.clip(g.title || g.short || g.text || '', 40)),
-        h('span', { class: 'gt-t' }, h('i', { class: 'gt-span' + (late ? ' late' : ''), style: 'left:' + x(s) + ';width:calc(' + x(e) + ' - ' + x(s) + ')' }, pct != null ? h('b', { style: 'width:' + (pct * 100) + '%' }) : null),
+        h('span', { class: 'gt-t' }, h('i', { class: 'gt-span' + (late ? ' late' : '') + (done ? ' done' : ''), style: 'left:' + x(s) + ';width:calc(' + x(e) + ' - ' + x(s) + ')' }, pct != null ? h('b', { style: 'width:' + (pct * 100) + '%' }) : null),
           h('em', { class: 'gt-now', style: 'left:' + x(today) }, 'today')),
-        h('b', { class: 'num ' + (late ? 'late' : '') }, pct == null ? 'count?' : Math.round(pct * 100) + '%'));
+        h('b', { class: 'num ' + (late ? 'late' : '') }, done ? 'done' : pct == null ? 'not recorded' : Math.round(pct * 100) + '%'));
     })));
   };
 })();

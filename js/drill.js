@@ -76,7 +76,7 @@
     try { BUILD[key](body); } catch (e) { console.error(e); body.appendChild(h('p', { class: 'p-empty' }, 'This list could not be drawn')); }
     root.appendChild(h('div', { class: 'd-back', onclick: function () { H.go('wall'); } }));
     root.appendChild(h('aside', { class: 'drill', role: 'dialog', 'aria-label': TITLES[key] },
-      h('header', { class: 'd-top' }, h('h2', null, TITLES[key]), h('span', { class: 'kv' }, 'read-only · switches on opened rows'), h('button', { class: 'sw-btn', type: 'button', id: 'drill-close', onclick: function () { H.go('wall'); } }, 'Close  Esc')),
+      h('header', { class: 'd-top' }, h('h2', null, TITLES[key]), h('button', { class: 'sw-btn', type: 'button', id: 'drill-close', onclick: function () { H.go('wall'); } }, 'Close  Esc')),
       body,
       last ? h('footer', { class: 'd-foot' }, h('span', { class: 'kv' }, H.clip(last.label, 60)), h('button', { class: 'sw-btn', type: 'button', onclick: function () { H.undo(); } }, 'Undo')) : null));
   };

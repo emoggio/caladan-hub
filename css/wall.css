@@ -337,3 +337,31 @@ select.mini-in { width: auto; }
   .wall { grid-template-rows: auto minmax(0, 1.1fr) minmax(0, 1fr);
     grid-template-areas: "sys sys sys sys sys sys sys sys sys sys sys sys" "goal goal goal goal todo todo todo todo cust cust cust cust" "raise raise raise raise net net net net net state state state"; }
 }
+
+/* ---------- panels size to what they hold ----------
+   The wall no longer pins itself to the window: each row is as tall as its fullest panel, panels in a row line up, and
+   numbers sit right under their chart instead of being pushed to the bottom. The page scrolls when there is more. */
+@media (min-width: 1100px) {
+  .page.is-wall { height: auto; min-height: 0; }
+  .is-wall .view { flex: none; }
+  .wall { flex: none; grid-template-rows: auto auto auto; }
+  .radar-wrap { min-height: 360px; }
+}
+.p-body { overflow: visible; }
+.stats { margin-top: 4px; }
+/* headers wrap rather than cut words off */
+.p-head { flex-wrap: wrap; row-gap: 2px; }
+.p-sub2 { white-space: normal; }
+.p-upd { margin-left: auto; }
+.p-n { margin-left: auto; }
+.p-head .p-n + .p-sub2 { margin-left: 0; }
+.gt-span.done { background: color-mix(in srgb, var(--good) 35%, var(--surface)); }
+.gt-span.done b { background: var(--good); }
+.gtrack li > b { font-size: 12.5px; }
+@media (max-width: 760px) {
+  .board { grid-template-columns: minmax(0, 1fr) !important; overflow: visible; }   /* a phone reads stages top to bottom */
+  .stat span { font-size: 12.5px; }
+  .hb { font-size: 14px; }
+  .d-body { padding: 14px 14px 28px; }
+}
+@media (min-width: 700px) and (max-width: 1099px) { .p-systems { grid-column: 1 / -1; } }

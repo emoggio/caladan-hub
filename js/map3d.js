@@ -134,11 +134,11 @@
       var selChanged = cur.sel !== (opt.sel || ''); cur.sel = opt.sel || '';
       G.width(stage.clientWidth).height(stage.clientHeight);
       /* new data rebuilds the layout object; redraw only if the bubbles actually moved, and keep the camera where it is */
-      var sig = L.nodes.length + ':' + Math.round(L.nodes.reduce(function (a, o) { return a + o.x * 3 + o.y; }, 0));
+      cur.L = L; var sig = L.nodes.length + ':' + Math.round(L.nodes.reduce(function (a, o) { return a + o.x * 3 + o.y; }, 0));
       if (cur.sig !== sig) {
         var first = !cur.sig; cur.sig = sig; els.forEach(function (e) { e.remove(); }); els.clear();
         G.graphData(build(L));
-        if (first) G.cameraPosition({ x: 0, y: 260, z: (L.R || 600) * 2.1 }, { x: 0, y: 0, z: 0 }, 0);
+        if (first) G.cameraPosition(home(), { x: 0, y: 0, z: 0 }, 0);
       }
       cur.L = L;
       G.nodeColor(colour).linkColor(G.linkColor()).linkWidth(G.linkWidth());
@@ -153,6 +153,8 @@
       wait.textContent = e.message + '. The 2D map still works.';
     });
   };
-  H.map3dReset = function () { if (G && cur.L) G.cameraPosition({ x: 0, y: 260, z: (cur.L.R || 600) * 2.1 }, { x: 0, y: 0, z: 0 }, 800); };
+  /* the starting view: far enough back that the whole map fits the width (a phone needs to stand further back) */
+  function home() { var w = box && box.clientWidth || 900; return { x: 0, y: 260, z: ((cur.L && cur.L.R) || 600) * 2.1 * Math.max(1, Math.sqrt(820 / w)) }; }
+  H.map3dReset = function () { if (G && cur.L) G.cameraPosition(home(), { x: 0, y: 0, z: 0 }, 800); };
   H.map3dZoom = function (f) { if (!G) return; var p = G.cameraPosition(), t = G.controls().target; G.cameraPosition({ x: t.x + (p.x - t.x) / f, y: t.y + (p.y - t.y) / f, z: t.z + (p.z - t.z) / f }, { x: t.x, y: t.y, z: t.z }, 300); };
 })();

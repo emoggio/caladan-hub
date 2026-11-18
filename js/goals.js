@@ -107,7 +107,7 @@
           ' · ', h('b', null, opps.length), ' customers · ', h('b', null, inv.length), ' investors · ', h('b', null, steps), ' steps due'),
         g.text && g.text !== g.title ? h('p', { class: 'small muted' }, g.text) : null,
         g.measure ? h('p', { class: 'small muted' }, 'Measure: ' + g.measure) : null,
-        g.raw.v2Note ? h('p', { class: 'small muted' }, 'Note: ' + H.clip(g.raw.v2Note, 260)) : null,
+        g.raw.v2Note && !g.answer ? h('p', { class: 'small muted' }, 'Note: ' + H.clip(g.raw.v2Note, 260)) : null,
         log.length ? h('ul', { class: 'rows' }, log.map(function (l) { var to = l.to || {}; return h('li', { class: 'row small' }, h('span', { class: 'num kv' }, H.agoTime(l.date)), ' ' + H.whoText(l.by) + ' set ' + (to.current != null ? to.current : '?') + ', ' + (STATUS[to.status] ? STATUS[to.status][0] : to.status || '') + (l.source ? ' · ' + l.source : '')); })) : null,
         setter(g)));
     });

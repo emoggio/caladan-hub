@@ -58,7 +58,7 @@
   H.systemsPanel = function (box) {
     /* a slim bar: one sentence and a light per routine; the history and the key are in the drill-in */
     var all = H.systems().filter(function (f) { return !f.extra; }), sum = H.systemSummary(), pend = H.inboxPending().length;
-    box.appendChild(h('p', { class: 'p-say lvl-' + sum.level }, sum.text));
+    /* the sentence is already in the header pill; the bar only adds a light per routine */
     box.appendChild(h('ul', { class: 'lamps' }, all.map(lamp)));
     if (pend) box.appendChild(h('b', { class: 'warn-t' }, pend + ' inbox ' + (pend === 1 ? 'note needs' : 'notes need') + ' an answer'));
   };
