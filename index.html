@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Caladan hub</title>
+<link rel="icon" href="img/caladan-worlds.svg">
+<script>
+/* Settings a future edit is most likely to touch. */
+window.HUB = {
+  classicFile: 'classic.html',   /* the old 3D map, published beside this page; '' if not published */
+  classicUrl: 'https://claude.ai/artifact/AYyB7NKWxykBVuiBzNnkz3', /* used when classicFile is '' */
+  founders: { eugenio: { id: 'n_eugenio', name: 'Eugenio' }, alex: { id: 'n_alex', name: 'Alex' } },
+  company: 'n_caladan',
+  coldAfterDays: 30
+};
+window.H = { classic: location.hash === '#classic' && !!window.HUB.classicFile };
+</script>
+<script src="js/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
+<script src="js/supa.js"></script>
+<script src="js/classic.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/views.css">
+<link rel="stylesheet" href="css/map.css">
+<link rel="stylesheet" href="css/wall.css">
+<link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <!-- Caladan Worlds globe mark (first path of the supplied logo) and the brand gradient: sand, lilac, blue, teal -->
+    <symbol id="cw-mark" viewBox="197.8 0 215.5 204.6"><path d="M413.231 102.265C413.231 45.8788 364.922 0 305.537 0C246.153 0 197.844 45.8788 197.844 102.265C197.844 158.65 246.153 204.529 305.537 204.529C364.922 204.529 413.231 158.65 413.231 102.265ZM211.686 125.933C210.093 120.302 211.23 114.08 215.066 107.432C226.141 88.2354 256.959 69.8315 293.58 60.5361C295.808 59.9678 298.044 59.4443 300.265 58.9582V83.2175C300.265 92.0119 294.297 99.6845 285.772 101.846L229.2 116.204C226.38 116.922 224.668 119.786 225.386 122.613C225.991 124.998 228.138 126.591 230.493 126.591C230.92 126.591 231.361 126.539 231.795 126.427L276.32 115.127C288.464 112.046 300.265 121.222 300.265 133.755V147.605C280.635 150.865 261.805 151.037 245.958 147.964C227.106 144.307 214.61 136.283 211.678 125.933H211.686ZM310.817 121.319C310.817 112.525 316.784 104.852 325.31 102.691L381.882 88.3326C384.702 87.6147 386.414 84.7506 385.696 81.9238C384.978 79.1045 382.114 77.392 379.287 78.1099L334.762 89.4095C322.617 92.4905 310.817 83.3147 310.817 70.7813V56.9167C321.017 55.2191 331.008 54.3591 340.475 54.3591C349.217 54.3591 357.518 55.092 365.124 56.5652C383.976 60.222 396.472 68.2461 399.404 78.596C400.997 84.2271 399.86 90.449 396.024 97.0971C384.948 116.294 354.131 134.698 317.51 143.993C315.281 144.561 313.053 145.07 310.824 145.563V121.319H310.817ZM383.557 50.9341C365.572 43.7251 340.161 41.7509 312.043 46.0359C311.4 46.1331 310.817 45.6395 310.817 44.9889V11.8231C310.817 11.2098 311.34 10.7163 311.954 10.7537C342.001 12.6083 368.354 27.4226 384.814 49.3113C385.457 50.1713 384.559 51.3379 383.565 50.9416L383.557 50.9341ZM300.265 11.8156V47.2997C300.265 47.8007 299.914 48.2345 299.428 48.3391C296.631 48.9374 293.819 49.588 290.992 50.3059C255.403 59.3396 225.603 76.1506 210.654 95.2126C210.003 96.0427 208.657 95.5117 208.754 94.4573C212.785 49.5132 251.283 13.6926 299.136 10.7387C299.749 10.7013 300.273 11.1949 300.273 11.8081L300.265 11.8156ZM226.261 155.21C225.618 154.35 226.515 153.184 227.51 153.58C239.161 158.254 253.923 160.737 270.532 160.737C279.558 160.737 289.13 160.004 299.039 158.493C299.682 158.396 300.265 158.89 300.265 159.54V192.706C300.265 193.319 299.742 193.813 299.128 193.775C269.073 191.921 242.713 177.099 226.253 155.203L226.261 155.21ZM310.817 192.713V157.229C310.817 156.728 311.168 156.295 311.654 156.19C314.451 155.592 317.263 154.941 320.09 154.223C355.679 145.197 385.472 128.386 400.428 109.316C401.079 108.486 402.425 109.017 402.328 110.072C398.297 155.016 359.799 190.836 311.946 193.79C311.333 193.828 310.809 193.334 310.809 192.721L310.817 192.713Z"/></symbol>
+    <linearGradient id="cw-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f3c9a6"/><stop offset=".3" stop-color="#b9a4ec"/><stop offset=".62" stop-color="#2f7cf6"/><stop offset="1" stop-color="#3ccbd0"/>
+    </linearGradient>
+  </defs>
+</svg>
+<div class="page is-wall" id="page">
+  <header class="top">
+    <a class="brand" href="#wall" aria-label="Caladan hub, the wall">
+      <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#cw-mark" x="3.5" y="3.5" width="17" height="17" fill="url(#cw-grad)"/></svg></span>
+      <span class="brand-name">Caladan hub</span>
+    </a>
+    <button class="master lvl-none" id="master" type="button"><i class="master-light" aria-hidden="true"></i><span class="master-text">Connecting</span></button>
+    <div class="search" id="search">
+      <label class="sr" for="q">Look up a person or organisation</label>
+      <input id="q" type="search" autocomplete="off" placeholder="Look up a person or organisation    /">
+      <div class="search-results" id="search-results" hidden></div>
+    </div>
+    <span class="tick" id="tick" aria-live="off">connecting</span>
+    <div class="viewer" id="viewer"></div>
+  </header>
+
+  <main id="view" class="view" tabindex="-1">
+    <div class="wall skeleton" aria-hidden="true">
+      <section class="panel p-systems"></section><section class="panel p-todo"></section><section class="panel p-goals"></section><section class="panel p-customers"></section>
+      <section class="panel p-raise"></section><section class="panel p-network"></section><section class="panel p-state"></section>
+    </div>
+  </main>
+
+  <footer class="foot">
+    <a id="classic-link" href="#classic">Classic 3D map</a>
+    <span id="foot-note"></span>
+    <a href="#" onclick="window.brainSignOut&&brainSignOut();return false">Sign out</a>
+  </footer>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="js/util.js"></script>
+<script src="js/data.js"></script>
+<script src="js/graph.js"></script>
+<script src="js/systems.js"></script>
+<script src="js/goals.js"></script>
+<script src="js/confirm.js"></script>
+<script src="js/backlog.js"></script>
+<script src="js/pipes.js"></script>
+<script src="js/state.js"></script>
+<script src="js/search.js"></script>
+<script src="js/people.js"></script>
+<script src="js/paths.js"></script>
+<script src="js/profile.js"></script>
+<script src="js/maplayout.js"></script>
+<script src="js/maplens.js"></script>
+<script src="js/mapview.js"></script>
+<script src="js/wall.js"></script>
+<script src="js/drill.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
