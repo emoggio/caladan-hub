@@ -24,12 +24,6 @@
   function css(name, fb) { var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim(); return v || fb; }
   function hash(id) { var x = 7; for (var i = 0; i < id.length; i++) x = (x * 31 + id.charCodeAt(i)) | 0; return ((x >>> 0) % 997) / 997; }
   function esc(s) { return String(s || '').replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-  function mix(hex, k) {   /* fade a colour towards the background: k = 0 keeps it, 1 is background */
-    var m = /^#?([0-9a-f]{6})$/i.exec(hex); if (!m) return hex;
-    var a = parseInt(m[1], 16), b = parseInt(BG.slice(1), 16), out = 0;
-    for (var s = 16; s >= 0; s -= 8) out = (out << 8) | Math.round(((a >> s) & 255) * (1 - k) + ((b >> s) & 255) * k);
-    return '#' + ('00000' + out.toString(16)).slice(-6);
-  }
   function idOf(v) { return v && typeof v === 'object' ? v.id : v; }
 
   function build(L) {
@@ -59,10 +53,12 @@
 
   function lit(n) { return n.core || cur.hi[n.id] || n.id === cur.sel; }
   function strong(l) { var a = idOf(l.source), b = idOf(l.target), f = cur.sel || hover; return f ? (a === f || b === f) : cur.route ? !!(cur.hi[a] && cur.hi[b]) : false; }
+  /* a bubble's true colour; faded bubbles keep it and become see-through (the alpha in colour() sets the opacity),
+     so a dimmed orange is still orange, not brown */
+  function tone(n) { return n.id === cur.sel ? '#ffffff' : (cur.C[n.owner] || cur.C.none); }
   function colour(n) {
-    var c = cur.C[n.owner] || cur.C.none;
-    if (n.id === cur.sel) return '#ffffff';
-    return lit(n) ? c : mix(c, 0.35);
+    var c = tone(n); if (lit(n)) return c;
+    var v = parseInt(c.slice(1), 16); return 'rgba(' + (v >> 16 & 255) + ',' + (v >> 8 & 255) + ',' + (v & 255) + ',0.3)';
   }
   /* every relationship stays visible: brighter between two lit bubbles, bright blue for the focus, faint only while
      something else is in focus. The alpha in the colour sets each line's opacity. */
@@ -129,9 +125,11 @@
     /* flat bubbles, as on the old map: each glows its exact colour and ignores the lights, so the founder orange stays
        orange instead of shading to brown. Set only when the colour changes. */
     data.nodes.forEach(function (n) {
-      var o = n.__threeObj, m = o && o.material, c; if (!m || !m.emissive) return;
-      c = colour(n);
-      if (o.__flat !== c || m.color.r || m.color.g || m.color.b) { m.emissive.set(c); m.color.setRGB(0, 0, 0); o.__flat = c; }
+      /* relies on 3d-force-graph 1.73.4 keeping each node's mesh in n.__threeObj with a Lambert material; re-check this
+         after any library upgrade (bubbles would turn shaded again, nothing worse) */
+      var o = n.__threeObj, m = o && o.material, key; if (!m || !m.emissive) return;
+      key = colour(n);
+      if (o.__flat !== key || m.color.r || m.color.g || m.color.b) { m.emissive.set(tone(n)); m.color.setRGB(0, 0, 0); o.__flat = key; }
     });
     function cand(n, pri, cls) {
       var zc = M[2] * n.x + M[6] * n.y + M[10] * n.z + M[14]; if (zc >= -1) return;   /* behind the camera */
@@ -169,7 +167,7 @@
       if (!stage.isConnected) return;
       if (!G) make();
       wait.remove(); stage.appendChild(box);
-      cur.C = { eugenio: css('--eug', '#cc7a33'), alex: css('--alex', '#8f72ea'), both: css('--both', '#27a59b'), none: '#93a9c9', hq: '#f3f5f8' };
+      cur.C = { eugenio: css('--eug', '#db7322'), alex: css('--alex', '#9373ea'), both: css('--both', '#27a59b'), none: '#8a96a3', hq: '#f3f5f8' };
       cur.hi = opt.hi || {}; cur.pick = opt.pick; cur.route = !!opt.route;
       var selChanged = cur.sel !== (opt.sel || ''); cur.sel = opt.sel || '';
       G.width(stage.clientWidth).height(stage.clientHeight);

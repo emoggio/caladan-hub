@@ -84,8 +84,11 @@
 .map-bar .btn[aria-pressed="true"] { border-color: var(--ink); }
 
 /* relationships: faint web, strong and named on hover or selection */
-.net-link { stroke: color-mix(in srgb, var(--s1, #3987e5) 40%, var(--muted, #8a96a3)); stroke-width: 1; opacity: .42; vector-effect: non-scaling-stroke; }
-.net-link.k-introduced, .net-link.k-invested, .net-link.k-customer, .net-link.k-partner { opacity: .6; }
+.net-link { stroke: color-mix(in srgb, var(--s1, #3987e5) 40%, var(--muted, #8a96a3)); stroke-width: 1; opacity: var(--net-a, .2); vector-effect: non-scaling-stroke; }
+.net-link.k-introduced, .net-link.k-invested, .net-link.k-customer, .net-link.k-partner { opacity: var(--net-b, .32); }
+/* links need more weight on a dark background than on white */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --net-a: .42; --net-b: .6; } }
+:root[data-theme="dark"] { --net-a: .42; --net-b: .6; }
 .net-link.k-competes { stroke-dasharray: 3 3; }
 .net-strong { stroke: var(--s1, #3987e5); stroke-width: 2; opacity: .9; }
 .net-strong.k-competes { stroke-dasharray: 4 3; }
