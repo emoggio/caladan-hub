@@ -63,8 +63,6 @@
       panel('network', 'Network', { n: D.nodes.size, unit: 'on the map', bad: 0, warn: 0, sub: D.edges.length + ' links' }, drillOpen ? function (b) { b.appendChild(h('p', { class: 'p-empty' }, 'Map paused while a panel is open')); } : networkPanel, 'map'),
       panel('state', 'Product and market', H.stateHead(), H.statePanel));
     root.appendChild(wall);
-    var folder = D.settings && typeof D.settings.brainFolderId === 'string' && /^[\w-]{10,}$/.test(D.settings.brainFolderId) ? 'https://drive.google.com/drive/folders/' + D.settings.brainFolderId : '';
-    root.appendChild(h('p', { class: 'talk' }, 'This wall only shows. To change anything, tell Claude or Grok',
-      folder ? [', or drop a note in the ', h('a', { href: folder, target: '_blank', rel: 'noopener' }, D.settings.brainFolderName || 'bot folder'), '.'] : '.'));
+    root.appendChild(h('p', { class: 'talk' }, 'This wall only shows. To change anything, tell Grok.'));
   };
 })();

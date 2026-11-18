@@ -72,6 +72,7 @@
     function btn(key) { return h('button', { type: 'button', 'aria-pressed': String(H.me === key), onclick: function () { H.me = key; H.store.set('me', key); drawViewer(false); H.render(); } }, HUB.founders[key].name); }
     box.appendChild(h('span', { class: 'viewer-l' }, detected && H.me ? 'Signed in as' : 'Viewing as'));
     box.appendChild(h('span', { class: 'seg', role: 'group', 'aria-label': 'Who is viewing' }, btn('eugenio'), btn('alex')));
+    if (H.signedIn && window.brainSignOut) box.appendChild(h('button', { class: 'sw-btn signout', type: 'button', onclick: function () { window.brainSignOut(); } }, 'Sign out'));
   }
   /* Display names are "Eugenio Moggio" and "Al". */
   function founderFromName(name) {
@@ -100,6 +101,7 @@
 
     window.claude.use('user').then(function (user) {
       if (!user) return;
+      H.signedIn = true; drawViewer(false);
       return user.me().then(function (me) {
         H.userId = me.id || null;
         var who = founderFromName(me.name);
@@ -112,9 +114,7 @@
       H.db = db;
       return H.loadAll(db).then(function () {
         H.render();
-        var D = H.data, note = D.nodes.size + ' people and organisations · ' + D.edges.length + ' links · ' + D.signals.length + ' signals · ' + D.needs.length + ' needs';
-        if (D.truncated.length) note += ' · some lists were cut at 1000: ' + D.truncated.join(', ');
-        document.getElementById('foot-note').textContent = note;
+        if (H.data.truncated.length) H.toast('Some lists were cut at 1000: ' + H.data.truncated.join(', '));
         H.watch(db, function () { renderSoon(); });
         setInterval(drawTick, 15000);
         /* lights go stale with time even when nothing changes: redraw once a minute, never while a field has focus */
