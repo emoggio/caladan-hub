@@ -50,6 +50,7 @@ curl -s "$BRAIN_URL/rest/v1/rpc/brain_search" -H "apikey: $PUBLISHABLE_KEY" -H "
 | `brain_list` | `collection`, optional `fields` (array: only these fields), `match` (JSON the record must contain, e.g. `{"type":"person"}`), `lim` (default 50, max 500), `since` (ISO time), `order_by` (a field, highest/newest first), `skip` (rows to skip, to page past 500) | compact rows, each with `id`. |
 | `brain_get` | `collection`, `id` | one full record with `version`, or `{"error":"not in the brain"}`. |
 | `brain_put` | `collection`, `id`, `patch` (object), `note` (why, one line), optional `if_version`, optional `append` (object of arrays) | creates the record if new, otherwise merges `patch` into it (top-level fields) and adds each `append` array to the end of that field. Appending `touchpoints` to a node also moves `lastContact` forward. `{ok, created, version}`. |
+| `brain_step` | `docs` (the records holding one next step, as `brain_todo` lists them), `change` (`{"status":"done"}`, `{"status":"dropped"}`, `{"date":"YYYY-MM-DD"}`, or `action`, `who`, `kind`), optional `note` | closes, drops or reschedules that step on every record at once, changing only the fields named; on a promise it sets `status` / `due`. One result per record; a record with no step is reported, not changed. |
 | `brain_changes` | optional `since`, `lim` (default 30, max 200, newest first) | recent changes: who, which record, which fields. |
 | `brain_undo` | `n` (a change number) | puts that record back as it was before change `n`. Only for your own change, and only while nothing has changed that record since; otherwise it refuses and says why. |
 
@@ -59,7 +60,7 @@ Three small calls answer almost anything: `brain_start`, then `brain_search` (or
 
 ### Writing safely
 
-- `brain_put` merges **top-level fields**: a field you put replaces the old one whole, nested objects included (put the whole `next`, with its `status`). To add to an array, use `append`, for example `{"touchpoints":[{date, channel, who, context, ref}]}`; never read the record just to add to it. Use `if_version` when you change a field someone else may be changing; if the answer is `changed since you read it`, read again and redo it.
+- `brain_put` merges **top-level fields**: a field you put replaces the old one whole, nested objects included (put the whole `next`, with its `status`). To add to an array, use `append`, for example `{"touchpoints":[{date, channel, who, context, ref}]}`; never read the record just to add to it. To close, drop or move an existing next step, use `brain_step` with the `docs` from `brain_todo`; never read records just to re-send their step. Use `if_version` when you change a field someone else may be changing; if the answer is `changed since you read it`, read again and redo it.
 - Never delete. To retire a record, set `"archived": true` and say why in `note`.
 - Every fact you write carries a **source and a date** (where it came from: an email subject, a meeting title and date, a chat with Eugenio on a date, a URL).
 - Ids are lowercase with underscores, prefixed as in section 3. Check with `brain_search` that a person or organisation is not already there (by name and by organisation) before creating one.
@@ -140,7 +141,7 @@ Id prefixes: `n_` people and organisations the founders deal with; `c_` companie
 
 **Calendar and email (each run)**: for meetings in the last day and the next day, and email threads with people in the brain: add touchpoints (subject or meeting title only, never email bodies), update `lastContact`, propose commitments and decisions you see, and flag new people who matter (do not create a person unless they serve a goal). Prep for an outside call goes out 30 to 60 minutes before, never the day before (see GROK-PLAYBOOK.md). Write `status/grok_email`.
 
-**Saturday upkeep (weekly)**: a clean-up of the brain, not a scoreboard. Start from `brain_todo`: it lists exactly what the control room flags. Make the fields the control room shows true: `status` and `who` on promises and decisions (from any `triage` answers), one current `next` per relationship on the pipeline card and on the person and organisation (close stale ones, never add a second), numeric `current` and `status` on goals, rivals with `caps`, rounds and contracts with `amountUSD` and `segment`. Propose duplicates for archiving. Write `status/grok_weekly`.
+**Saturday upkeep (weekly)**: a clean-up of the brain, not a scoreboard. Start from `brain_todo`: it lists exactly what the control room flags. Make the fields the control room shows true: `status` and `who` on promises and decisions (from any `triage` answers), one current `next` per relationship on the pipeline card and on the person and organisation (close or move stale ones with one `brain_step` per step, never add a second), numeric `current` and `status` on goals, rivals with `caps`, rounds and contracts with `amountUSD` and `segment`. Propose duplicates for archiving. Write `status/grok_weekly`.
 
 ---
 
