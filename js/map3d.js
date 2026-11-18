@@ -126,6 +126,13 @@
     raf = requestAnimationFrame(tick);
     var cam = G.camera(), M = cam.matrixWorldInverse.elements, W = box.clientWidth, Hh = box.clientHeight;
     var data = G.graphData(), want = [], seen = {};
+    /* flat bubbles, as on the old map: each glows its exact colour and ignores the lights, so the founder orange stays
+       orange instead of shading to brown. Set only when the colour changes. */
+    data.nodes.forEach(function (n) {
+      var o = n.__threeObj, m = o && o.material, c; if (!m || !m.emissive) return;
+      c = colour(n);
+      if (o.__flat !== c || m.color.r || m.color.g || m.color.b) { m.emissive.set(c); m.color.setRGB(0, 0, 0); o.__flat = c; }
+    });
     function cand(n, pri, cls) {
       var zc = M[2] * n.x + M[6] * n.y + M[10] * n.z + M[14]; if (zc >= -1) return;   /* behind the camera */
       var p = G.graph2ScreenCoords(n.x, n.y, n.z); if (p.x < -50 || p.y < -20 || p.x > W + 50 || p.y > Hh + 20) return;
