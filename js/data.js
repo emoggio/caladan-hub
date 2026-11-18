@@ -69,6 +69,20 @@
         H.touched(); cb(name);
       }, function () { /* stays as loaded */ });
     });
+    /* the big three (people and organisations, links, signals): a change anywhere re-reads them once, a few seconds after
+       the last change, so a bot writing fifty records causes one reload, not fifty */
+    var t = 0;
+    function reload() {
+      Promise.all([sliced(db, 'nodes', 'type', NODE_TYPES), sliced(db, 'edges', 'kind', EDGE_KINDS), whole(db, 'signals')]).then(function (r) {
+        D.nodes = new Map(); r[0].forEach(function (n) { D.nodes.set(n.id, n); });
+        D.edges = r[1].filter(function (e) { return D.nodes.has(e.source) && D.nodes.has(e.target); });
+        D.signals = r[2]; H.derive(); H.touched(); cb('nodes');
+      }, function () { /* stays as loaded */ });
+    }
+    ['nodes', 'edges', 'signals'].forEach(function (name) {
+      var first = true;
+      db.collection(name).limit(1).onSnapshot(function () { if (first) { first = false; return; } clearTimeout(t); t = setTimeout(reload, 4000); }, function () { /* not watched */ });
+    });
   };
 
   function who(t) {

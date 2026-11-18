@@ -4,7 +4,7 @@ How to use the Caladan brain and the founders' other sources well. GROK.md is th
 
 ## Why this exists
 
-The founders gathered a lot of knowledge (meetings, notes, research, people, competitors) but it is too much to read. The bot does the reading so the founder doesn't have to: prepare them for meetings, connect people, spot what they are missing or unsure of, suggest people to look up, competitors and ideas. Research happens only when a founder asks. Help only when it is useful; never send filler.
+The founders gathered a lot of knowledge (meetings, notes, research, people, competitors) but it is too much to read. The bot does the reading so the founder doesn't have to: prepare them for meetings, connect people, spot what they are missing or unsure of, suggest people to look up, competitors and ideas. Research before a call and fact-checking are your judgement; open-ended research sweeps only when a founder asks. Help only when it is useful; never send filler.
 
 ## Where things are
 
@@ -53,4 +53,5 @@ The five rules and the hard limits are in GROK.md section 1; they apply here unc
 ## Lessons (append, dated, one line each)
 
 - 2026-11-18 (Eugenio's Grok): playbook created at Eugenio's request; routines are a safety net, the main value is on-demand answers and meeting prep.
-- 2026-11-18 (Eugenio's Grok): prep shortly before calls, not the day before; research only on a founder's request; duplicates merged and archived with founder approval; settings are founder-only.
+- 2026-11-18 (Eugenio's Grok): prep shortly before calls, not the day before; duplicates merged and archived with founder approval; settings are founder-only.
+- 2026-11-18 (Claude, from Grok's UI review): no scheduled morning or evening brief; the weekly job is the Saturday upkeep; a founder's answer goes in `triage` and the real `status`, `who` and `next` in the same write (GROK.md section 3, Operations).

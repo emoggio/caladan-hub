@@ -43,6 +43,14 @@
       if (c.status !== 'open' || !c.due || c.due > today) return;
       out.push({ id: 'promise:' + c.id, kind: 'Promise', ref: { t: 'promise', id: c.id }, due: c.due, who: c.who || '', task: c.what, name: c.to ? H.idToName(c.to) : '', nodes: c.to && D.nodes.has(c.to) ? [c.to] : [], goalId: (c.to && links[c.to]) || '' });
     });
+    /* the same action written on a person, their organisation and a pipeline card is one step: same date, same opening words */
+    var seen = {}; out = out.filter(function (c) {
+      var k = c.due + '|' + H.norm(c.task || '').replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim().slice(0, 40), f = seen[k];
+      if (!f) { seen[k] = c; return true; }
+      c.nodes.forEach(function (id) { if (f.nodes.indexOf(id) < 0) f.nodes.push(id); });
+      if (!f.goalId) f.goalId = c.goalId; if (f.ref.t === 'node' && c.ref.t !== 'node') { f.kind = c.kind; f.name = c.name; }
+      return false;
+    });
     out.forEach(function (c) { c.owner = H.ownerOf(c.who); c.late = Math.max(0, H.daysSince(c.due) || 0); c.orphan = c.owner === 'unassigned' || !c.goalId; });
     return out.sort(function (a, b) { return (a.goalId ? 0 : 1) - (b.goalId ? 0 : 1) || (a.late === 0 ? 0 : 1) - (b.late === 0 ? 0 : 1) || b.late - a.late || (a.id < b.id ? -1 : 1); });
   }

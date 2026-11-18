@@ -7,28 +7,28 @@
   var OWNER = { eugenio: 'Eugenio', alex: 'Alex', both: 'Both', unassigned: 'No owner' };
 
   /* one panel: a header that states the number and a light, then the instrument */
+  /* which collections each panel reads, for its "updated" stamp */
+  var READS = { systems: ['status'], todo: ['commitments', 'decisions', 'opportunities', 'raise'], goals: ['goals'], customers: ['opportunities'], raise: ['raise'], network: ['nodes', 'edges'], state: ['signals', 'needs', 'roadmap'] };
   function panel(key, title, head, build, drill) {
+    var last = READS[key] ? H.newest(READS[key]) : '', upd = H.londonWhen(last), old = last && Date.now() - Date.parse(last) > 864e5;
     var lvl = head.lvl || (head.bad ? 'bad' : head.warn ? 'warn' : 'ok');
     var body = h('div', { class: 'p-body' });
     var el = h('section', { class: 'panel p-' + key, 'aria-label': title },
       h('button', { class: 'p-head', type: 'button', title: 'Open ' + title, onclick: function () { H.go(drill || key); } },
         h('span', { class: 'p-title' }, title), h('span', { class: 'p-light lvl-' + lvl, 'aria-hidden': 'true' }),
-        h('span', { class: 'p-n num' }, head.n, h('small', null, ' ' + head.unit)), head.sub ? h('span', { class: 'p-sub2' }, head.sub) : null, h('span', { class: 'p-open', 'aria-hidden': 'true' }, '↗')), body);
+        h('span', { class: 'p-n num' }, head.n, h('small', null, ' ' + head.unit)), head.sub ? h('span', { class: 'p-sub2' }, head.sub) : null, upd ? h('span', { class: 'p-upd' + (old ? ' old' : ''), title: 'Newest change in what this panel reads (London time)' }, 'updated ' + upd) : null, h('span', { class: 'p-open', 'aria-hidden': 'true' }, '↗')), body);
     try { build(body); } catch (e) { console.error(e); body.appendChild(h('p', { class: 'p-empty' }, 'This panel could not be drawn')); }
     return el;
   }
 
   function todoPanel(box) {
-    var b = H.backlog(), total = b.steps.length, props = H.confirmCount(), inbox = H.inboxPending().length;
+    var b = H.backlog(), total = b.steps.length, props = H.confirmCount(), parked = H.parked().length, inbox = H.inboxPending().length;
     function stat(n, label, cls, drill) { return h('button', { class: 'stat' + (cls ? ' ' + cls : ''), type: 'button', onclick: function (ev) { ev.stopPropagation(); H.openTodo(drill); } }, h('b', { class: 'num' }, n), h('span', null, label)); }
     box.appendChild(h('div', { class: 'age', role: 'img', 'aria-label': 'Due steps by age: ' + b.buckets.map(function (x) { return x.label + ' ' + x.n; }).join(', ') },
       b.buckets.map(function (x) { return h('div', { class: 'age-seg a-' + x.key, style: 'flex:' + Math.max(x.n, total ? total * 0.09 : 1) + ' 1 0' }, h('b', { class: 'num' }, x.n), h('span', null, x.label)); })));
-    var max = Math.max.apply(null, b.owners.map(function (o) { return o.n; }).concat([1]));
-    box.appendChild(h('ul', { class: 'hbars owners' }, b.owners.map(function (o) { return H.bar(OWNER[o.key], o.n, max, 'o-' + o.key); })));
     box.appendChild(h('div', { class: 'stats' },
-      stat(b.orphans.length, 'no owner or no goal: drop?', b.orphans.length ? 'warn' : '', 'orphans'),
-      stat(b.stale.length, 'stale over 30 days', b.stale.length ? 'bad' : '', 'stale'),
-      stat(props, 'awaiting yes / no', props ? 'warn' : '', 'proposals'),
+      stat(props, 'waiting for your yes / no', props ? 'warn' : '', 'proposals'),
+      stat(parked, 'answered, with Alex or parked', '', 'parked'),
       stat(b.promises.length, 'promises open' + (b.promisesLate ? ', ' + b.promisesLate + ' late' : ''), b.promisesLate ? 'warn' : '', 'promises'),
       inbox ? stat(inbox, 'inbox notes need an answer', 'warn', 'systems') : null));
   }
@@ -56,8 +56,8 @@
     var D = H.data;
     var wall = h('div', { class: 'wall' },
       panel('systems', 'Systems', H.systemsHead(), H.systemsPanel),
-      panel('todo', 'Needs doing', todoHead(), todoPanel),
       panel('goals', 'Goals', H.goalsHead(), H.goalsPanel),
+      panel('todo', 'Needs doing', todoHead(), todoPanel),
       panel('customers', 'Customers', H.pipeHead('opp'), function (b) { H.pipePanel('opp', b); }),
       panel('raise', 'Raise', H.pipeHead('raise'), function (b) { H.pipePanel('raise', b); }),
       panel('network', 'Network', { n: D.nodes.size, unit: 'on the map', bad: 0, warn: 0, sub: D.edges.length + ' links' }, drillOpen ? function (b) { b.appendChild(h('p', { class: 'p-empty' }, 'Map paused while a panel is open')); } : networkPanel, 'map'),

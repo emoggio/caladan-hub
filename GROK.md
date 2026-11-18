@@ -96,7 +96,7 @@ Id prefixes: `n_` people and organisations the founders deal with; `c_` companie
 
 ### The spine: goals and standing questions
 
-- `goals`: `{n, text, owner, by, measure, target, current, unit, status}`. The field is `text`, not `title`, and there is no `log`. `status`: `on-track`, `at-risk`, `off-track`, `done`, `unknown`. Everything you rank, you rank by distance to a goal. If `current` is null, say the count is not recorded and ask the founder for it; never estimate it.
+- `goals`: `{n, text, owner, by, measure, target, current, unit, status}`. The field is `text`, not `title`, and there is no `log`. `status`: `on-track`, `at-risk`, `off-track`, `done`, `unknown`. Everything you rank, you rank by distance to a goal. `current` is a **number** whenever the goal is counted (2 LOIs signed is `2`); text only for a yes/no goal, together with `status: "done"` when it is met. If `current` is null, say the count is not recorded and ask the owner for it; never estimate it.
 - `pirs`: `{q, owner}`, the standing questions (first LOI, lead investor, non-dilutive money, the rival who could take the wedge, the Ukraine data feed). Answer against them when something relevant arrives.
 - `theses`: `{statement, confidence, status, due, evidence, log[]}`: bets with a confidence and a log of evidence.
 
@@ -109,6 +109,7 @@ Id prefixes: `n_` people and organisations the founders deal with; `c_` companie
 
 - `commitments`: promises made by or to the founders. `{date, who, to, what, due, source, status}`; `status` `proposed`, `open`, `done`, `dropped`.
 - `decisions`: `{date, decision, why, owner, source, status, nodes[], goalId}`; `status` `proposed`, `confirmed`, `rejected`. Anything you infer from an email or meeting is `proposed` until a founder confirms it in chat.
+- **`triage` is an audit note, not a status.** When a founder answers something, record `triage: {answer, by, date, source, decisionOwner?}` and **also** set the real fields in the same write: on a promise `status` (`open` once confirmed and live, `done`, `dropped`) and `who`; on a decision `status` (`confirmed`, `rejected`, or left `proposed` while someone else decides); when it is passed to Alex, set `who` / `owner` to `alex` and `triage.decisionOwner: "alex"`. Then update the matching `next` on the person, their organisation and the pipeline card (close it with `status: "done"` or `"dropped"`, or move its date). The control room files an item with a `triage.answer` under "With Alex / parked", and only items without one under "Waiting for yes / no". Use only the status words listed here; a new one needs a change to this file and to the control room together.
 - `needs`: user needs heard from a named person: `{statement, who, org, serves, tags, date, ref, roadmapId?}`.
 - `roadmap`: `{title, why, needIds[], status, quarter, owner}`; `status` `idea`, `planned`, `building`, `shipped`.
 
@@ -116,12 +117,12 @@ Id prefixes: `n_` people and organisations the founders deal with; `c_` companie
 
 - `signals`: dated market events. `{kind, title, date, source, url, note, nodes[], segment, geo, amountUSD}`. `kind`: round, contract, product, programme, policy, window, fund, partnership, event, press. `segment`: one of `fpv-training`, `synthetic-env`, `autonomy`, `counter-uas`, `oem-drones`, `maritime`, `policy` (budgets, policy and fund closes). Put the amount in US dollars in `amountUSD` for every round and contract. Id `sg_<slug>_<yyyymmdd>`.
 - `valuations`: one record per funding round of a comparable company. `{company, node, stage, date, amountUSD, valuationUSD, lead, source, grade, like}`. `stage` as written (Pre-seed, Seed, Series A…). `like: true` marks a company like us; our own ask is a record with `node: "n_caladan"`.
-- `research`: `{q, why, answer, sources, status}`: research questions and answers. Answer only when a founder asks; do not run, queue or sweep them on your own.
+- `research`: `{q, why, answer, sources, status}`: research questions and answers. Research before a call and fact-checking are your judgement (see GROK-PLAYBOOK.md); open-ended research sweeps only when a founder asks.
 - `findings`: alerts that are dismissed or acted on. Not a research queue.
 
 ### System
 
-- `status`: health of every routine. Id `<who>_<source>`, e.g. `grok_daily`, `grok_email`, `shared_research`. Fields: `lastAttempt`, `lastSuccess`, `lastError` (null when fine), `read`, `changed`. A source is **current** if `lastSuccess` is within 26 hours (weekly ones: 8 days), **failed** if `lastAttempt` is later than `lastSuccess`, otherwise **stale**.
+- `status`: health of every routine. Id `<who>_<routine>`. Only routines that run have one: `grok_email` (email and calendar triage) and `grok_weekly` (the Saturday upkeep). Do not write one for meeting prep or a one-off job. Fields: `lastAttempt`, `lastSuccess`, `lastError` (null when fine), `read`, `changed`. A source is **current** if `lastSuccess` is within 26 hours (weekly ones: 8 days), **failed** if `lastAttempt` is later than `lastSuccess`, otherwise **stale**.
 - `activity`: a log line per notable run, `{date, agent, summary, nodes[]}`. Prefer `status` for health; `brain_changes` already records every write.
 - `settings/main`: founders' settings. The API rejects bot writes.
 
@@ -133,17 +134,11 @@ Id prefixes: `n_` people and organisations the founders deal with; `c_` companie
 
 **A founder asks a question**: answer from the brain. Lead with the answer, then the reason, owner and goal, then the source as `collection/id · date`. If it is not in the brain, say "not in the brain"; if you add general knowledge, say so.
 
-**Morning routine (weekdays)**: run the health check (section 5), then send each founder their daily, at most 12 lines:
-1. **Delete** (up to 3): what to drop today, each with the reason.
-2. **Do** (up to 3): `action · who asked · goal · why today`.
-3. **Know** (up to 2): what changed that matters.
-4. **Missing** (up to 2): what neither founder is looking at.
-5. **Broken** (only if something is): what failed and what it affects.
-Then write `status/grok_daily`.
+**A founder asks for a brief** (there is no scheduled morning or evening brief): run the health check (section 5), then at most 12 lines: **Delete** (up to 3, with the reason), **Do** (up to 3: `action · who asked · goal · why today`), **Know** (up to 2), **Missing** (up to 2), **Broken** (only if something is).
 
-**Calendar and email (each run)**: for meetings in the last day and the next day, and email threads with people in the brain: add touchpoints (subject or meeting title only, never email bodies), update `lastContact`, propose commitments and decisions you see, and flag new people who matter (do not create a person unless they serve a goal). Prep for an outside call goes out 30 to 60 minutes before, never the day before (see GROK-PLAYBOOK.md). Write `status/grok_email` or `status/grok_calendar`.
+**Calendar and email (each run)**: for meetings in the last day and the next day, and email threads with people in the brain: add touchpoints (subject or meeting title only, never email bodies), update `lastContact`, propose commitments and decisions you see, and flag new people who matter (do not create a person unless they serve a goal). Prep for an outside call goes out 30 to 60 minutes before, never the day before (see GROK-PLAYBOOK.md). Write `status/grok_email`.
 
-**Weekly (Monday)**: scoreboard against goals, both pipelines (what moved, what has no next step), stale commitments, and up to 5 market signals worth writing. Write `status/grok_weekly`.
+**Saturday upkeep (weekly)**: a clean-up of the brain, not a scoreboard. Make the fields the control room shows true: `status` and `who` on promises and decisions (from any `triage` answers), one current `next` per relationship on the pipeline card and on the person and organisation (close stale ones, never add a second), numeric `current` and `status` on goals, rivals with `caps`, rounds and contracts with `amountUSD` and `segment`. Propose duplicates for archiving. Write `status/grok_weekly`.
 
 ---
 
@@ -168,10 +163,10 @@ Always write your own status record at the end of a run, truthfully: `lastAttemp
 
 | Panel (opens to) | Draws | From |
 |---|---|---|
-| Systems (run history) | a light per routine; a dot per day it ran or failed | `status`, `activity` |
-| Needs doing (due by owner and age) | every open next step, by founder and days late | `next` on opportunities, raise, nodes; `commitments` |
-| Goals (timeline) | progress against target, time left | `goals.current`, `target`, `by`, `createdAt` |
-| Customers, Raise (boards) | one column per stage, a card per record, red when the step is late | `stage`, `next{date,action,who}`, `goalId` |
+| Systems (slim bar; run history) | a light for `grok_email` and `grok_weekly` only; other status docs are listed as history | `status`, `activity` |
+| Goals (timeline) | number against target; text when `current` is text; "count not recorded · waiting on X" when a founder passed it on | `n`, `text`/`short`, `current`, `target`, `unit`, `status`, `by`, `owner`, `triage` |
+| Needs doing | **Due now**: open `next` on people, organisations and pipeline cards, and `open` promises, dated today or earlier (the same action on several records counts once). **Waiting for yes / no**: `proposed` with no `triage.answer`. **With Alex / parked**: `proposed` with a `triage.answer` | `next`, `commitments`, `decisions`, `triage`, `who` |
+| Customers, Raise (boards) | one column per stage; a card is "need a move" only if its step is late, its deadline is within 14 days, or it has no next step; budget holder, objection and a `triage` note newer than the step show on the card | `name`/`investorId`, `stage`, `next`, `deadline`, `budgetHolder`, `objection`, `owner`, `goalId`, `triage` |
 | Network (2D or 3D map) | direction = kind of organisation, distance from centre = how recently we spoke, colour = which founder | `nodes`, `edges`, `touchpoints`, `lastContact`, `owner` |
 | Market | money by quarter and segment; which segments are heating up; latest signals | `signals.date`, `kind`, `segment`, `amountUSD` |
 | Rivals | overlap with us against money raised; capability matrix | `nodes.caps`, `nodes.fin.fundingUSD` |
@@ -179,3 +174,13 @@ Always write your own status record at the end of a run, truthfully: `lastAttemp
 | Product | user needs behind each roadmap item; standing questions | `needs`, `roadmap`, `pirs` |
 
 A record missing one of these fields simply drops out of that chart. When you add a rival, give it `caps`; when you add a round or contract, give it `amountUSD` and a `segment` from the list in section 3.
+
+**Reading what the wall reads, cheaply** (never scrape the page; `brain_get` for one full record):
+
+| Panel | Call |
+|---|---|
+| Customers | `brain_list` `{"collection":"opportunities","fields":["name","stage","next","deadline","budgetHolder","owner","goalId","triage","updatedAt"],"lim":200}` |
+| Raise | same with `"collection":"raise"` and `"investorId","objection"` instead of `"name","budgetHolder"` |
+| Needs doing | `brain_list` `commitments` with `"fields":["status","who","what","due","triage","updatedAt"]`, and `decisions` with `"fields":["status","owner","decision","triage","updatedAt"]` |
+| Goals | `brain_list` `goals` with `"fields":["n","text","short","current","target","unit","status","by","owner","triage","updatedAt"]` |
+| Systems | `brain_list` `status` (all fields) |

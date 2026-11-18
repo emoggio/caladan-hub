@@ -34,12 +34,13 @@
     if (list.length > S.shown) box.appendChild(h('button', { class: 'more', type: 'button', onclick: function () { S.shown += 40; H.render(); } }, 'Show more (' + (list.length - S.shown) + ' left)'));
   }
   function proposalRow(q) {
-    var d = q.doc, dec = q.kind === 'decision', open = S.open === q.key;
+    var d = q.doc, dec = q.kind === 'decision', open = S.open === q.key, tri = d.triage && d.triage.answer ? d.triage : null, owner = H.ownerOf(tri && tri.decisionOwner || q.who);
     return h('li', { class: 'row step' + (open ? ' open' : '') },
       h('button', { class: 'row-h', type: 'button', 'aria-expanded': String(open), onclick: function () { S.open = open ? '' : q.key; H.render(); } },
         h('span', { class: 'age-tag' }, dec ? 'Decision' : 'Promise'),
-        h('span', { class: 'row-main' }, h('span', { class: 'row-t' }, q.text || 'Untitled'), h('span', { class: 'row-sub' }, (q.src.title || d.seededFrom || 'source not recorded') + (q.date ? ' · ' + H.fmtDate(q.date) : ''))),
-        h('span', { class: 'own o-' + H.ownerOf(q.who) }, OWNER[H.ownerOf(q.who)])),
+        h('span', { class: 'row-main' }, h('span', { class: 'row-t' }, q.text || 'Untitled'),
+          tri ? h('span', { class: 'row-ans' }, H.whoText(tri.by) + (tri.date ? ' (' + H.fmtDate(tri.date) + ')' : '') + ': ' + tri.answer) : h('span', { class: 'row-sub' }, (q.src.title || d.seededFrom || 'source not recorded') + (q.date ? ' · ' + H.fmtDate(q.date) : ''))),
+        h('span', { class: 'own o-' + owner }, OWNER[owner])),
       open ? h('div', { class: 'row-x' }, h('span', { class: 'kv' }, dec ? (d.why ? H.clip(d.why, 200) : 'No reason recorded') : ((d.to ? 'To ' + H.idToName(d.to) + ' · ' : '') + (d.due ? 'due ' + H.fmtDate(d.due) : 'no date'))),
         H.extLink(q.src.url, 'source'), h('span', { class: 'switches' }, sw('Confirm', function () { H.proposalAct(q, true); }), sw('Reject', function () { H.proposalAct(q, false); }, 'quiet'))) : null);
   }
@@ -48,18 +49,20 @@
     return h('li', { class: 'row step' + (open ? ' open' : '') },
       h('button', { class: 'row-h', type: 'button', 'aria-expanded': String(open), onclick: function () { S.open = open ? '' : 'p' + c.id; H.render(); } },
         h('span', { class: 'age-tag num' + (late > 30 ? ' bad' : late ? ' warn' : '') }, !c.due ? 'no date' : late ? late + 'd' : H.fmtDate(c.due)),
-        h('span', { class: 'row-main' }, h('span', { class: 'row-t' }, c.what), h('span', { class: 'row-sub' }, (c.to ? 'to ' + H.idToName(c.to) + ' · ' : '') + 'promised ' + H.fmtDate(c.date))),
+        h('span', { class: 'row-main' }, h('span', { class: 'row-t' }, c.what), h('span', { class: 'row-sub' }, (c.to ? 'to ' + H.idToName(c.to) + ' · ' : '') + 'promised ' + H.fmtDate(c.date)),
+          c.triage && c.triage.answer ? h('span', { class: 'row-ans' }, H.whoText(c.triage.by) + ': ' + c.triage.answer) : null),
         h('span', { class: 'own o-' + o }, o === 'unassigned' && c.who && c.who !== 'unassigned' ? H.whoText(c.who) : OWNER[o])),
       open ? h('div', { class: 'row-x' }, c.source && c.source.title ? h('span', { class: 'kv' }, c.source.title) : null, h('span', { class: 'switches' }, sw('Done', function () { H.promiseDone(c); }))) : null);
   }
   function todo(box) {
-    var b = H.backlog(), props = H.proposals();
+    var b = H.backlog(), props = H.proposals(), parked = H.parked();
     if (b.steps.length) box.appendChild(H.chartDue(b.steps));
-    var tabs = [['steps', 'All due', b.steps.length], ['orphans', 'No owner or no goal', b.orphans.length], ['stale', 'Stale 30 d +', b.stale.length], ['proposals', 'Awaiting yes / no', props.length], ['promises', 'Promises', b.promises.length]];
+    var tabs = [['steps', 'Due now', b.steps.length], ['proposals', 'Waiting for yes / no', props.length], ['parked', 'With Alex / parked', parked.length], ['promises', 'Open promises', b.promises.length], ['stale', 'Over 30 days late', b.stale.length], ['orphans', 'No owner or no goal', b.orphans.length]];
     box.appendChild(h('div', { class: 'tabs2', role: 'group', 'aria-label': 'Which list' }, tabs.map(function (t) {
       return h('button', { type: 'button', 'aria-pressed': String(S.tab === t[0]), onclick: function () { S.tab = t[0]; S.open = ''; S.shown = 20; S.arm = ''; H.render(); } }, t[1], ' ', h('b', { class: 'num' }, t[2]));
     })));
-    if (S.tab === 'proposals') box.appendChild(props.length ? h('ul', { class: 'rows' }, props.slice(0, S.shown + 20).map(proposalRow)) : h('p', { class: 'p-empty' }, 'Nothing is waiting for a yes or no'));
+    if (S.tab === 'parked') { box.appendChild(h('p', { class: 'kv' }, 'Answered already; waiting for the person named, or for the bot to set the final status.')); box.appendChild(parked.length ? h('ul', { class: 'rows' }, parked.slice(0, S.shown + 40).map(proposalRow)) : h('p', { class: 'p-empty' }, 'Nothing parked')); }
+    else if (S.tab === 'proposals') box.appendChild(props.length ? h('ul', { class: 'rows' }, props.slice(0, S.shown + 20).map(proposalRow)) : h('p', { class: 'p-empty' }, 'Nothing is waiting for a yes or no'));
     else if (S.tab === 'promises') { var ps = b.promises.slice().sort(function (x, y) { return (x.due || '9') < (y.due || '9') ? -1 : 1; }); box.appendChild(ps.length ? h('ul', { class: 'rows' }, ps.slice(0, S.shown + 20).map(promiseRow)) : h('p', { class: 'p-empty' }, 'No open promises')); }
     else if (S.tab === 'orphans') { box.appendChild(h('p', { class: 'kv' }, 'Steps with no named owner or tied to no goal. If nobody owns it and it serves no goal, it probably should not exist.')); stepList(box, b.orphans, 'Every due step has an owner and a goal', ''); }
     else if (S.tab === 'stale') stepList(box, b.stale, 'Nothing is more than 30 days overdue', 'stale');

@@ -1,5 +1,5 @@
 /* Charts for the drill-ins. Plain SVG, drawn from the same records the bots write; nothing here writes.
-   Which fields each chart needs is listed in BRAIN.md ("What the control room draws"), so the bots keep them filled.
+   Which fields each chart needs is listed in GROK.md section 6 ("The control room"), so the bots keep them filled.
    - Market:  signals {date, kind, segment, amountUSD}  -> money by quarter, segments heating up
    - Rivals:  nodes {caps{12 scores 0-3}, fin{fundingUSD}} -> overlap vs funding, capability matrix
    - Rounds:  valuations {company, stage, date, amountUSD, valuationUSD, like} -> rounds of companies like us, valuations over time */

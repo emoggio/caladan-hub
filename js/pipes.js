@@ -20,8 +20,7 @@
     if (late > 0) return { score: 100 + Math.min(late, 60), why: 'step ' + late + 'd overdue' };
     if (dl != null && dl >= 0 && dl <= 14) return { score: 90 - dl, why: 'deadline in ' + dl + 'd' };
     if (!nx && !early) return { score: 70, why: 'no next step' };
-    if (key === 'opp' && !early && !rec.budgetHolder) return { score: 50, why: 'no budget holder' };
-    if (key === 'raise' && rec.objection) return { score: 40, why: 'objection open' };
+    /* a missing budget holder or an old objection is a note on the card, not a reason to move when a dated step exists */
     return null;
   }
   H.pipe = function (key) {
@@ -32,19 +31,30 @@
       out: all.length - open.length, outName: b.out[1],
       stages: b.stages.map(function (st) { var list = open.filter(function (r) { return stageOf(b, r) === st[0]; }); return { key: st[0], name: st[1], n: list.length, late: list.filter(function (r) { return lateDays(r) > 0; }).length, won: !!b.won[st[0]], list: list }; }) };
   };
+  /* the goal most cards on this board serve, if it has a numeric target */
+  function boardGoal(key) {
+    var c = {}; (H.data[BOARDS[key].col] || []).forEach(function (r) { if (r.goalId) c[r.goalId] = (c[r.goalId] || 0) + 1; });
+    var id = Object.keys(c).sort(function (a, b) { return c[b] - c[a]; })[0], g = id && H.goalById(id);
+    return g && g.target != null ? g : null;
+  }
+  /* a founder's note that is newer than the card's next step: shown, never trusted over the date silently */
+  function note(rec) {
+    var t = rec.triage; if (!t || !t.answer) return null;
+    var nx = H.liveNext(rec), newer = nx && nx.date && t.date && t.date > nx.date;
+    return h('span', { class: 'row-ans' + (newer ? ' newer' : '') }, (newer ? 'Newer than the next step · ' : '') + H.whoText(t.by) + (t.date ? ' (' + H.fmtDate(t.date) + ')' : '') + ': ' + t.answer);
+  }
   H.pipeHead = function (key) { var p = H.pipe(key); return { lvl: p.total ? '' : 'none', n: p.open, unit: 'open', bad: p.oldest > 30 ? 1 : 0, warn: p.moves.length, sub: p.won + ' ' + p.wonWord }; };
 
   H.pipePanel = function (key, box) {
     var p = H.pipe(key);
     if (!p.total) { box.appendChild(h('p', { class: 'p-empty' }, 'No cards yet')); return; }
-    var max = Math.max.apply(null, p.stages.map(function (s) { return s.n; }).concat([1]));
-    box.appendChild(h('ul', { class: 'hbars funnel' }, p.stages.map(function (s) {
+    var max = Math.max.apply(null, p.stages.map(function (s) { return s.n; }).concat([1])), g = key === 'opp' ? boardGoal(key) : null;   /* the LOI goal is about customers, not investors */
+    box.appendChild(h('ul', { class: 'hbars funnel', title: 'Open the board', onclick: function () { H.go(key === 'opp' ? 'customers' : 'raise'); } }, p.stages.map(function (s) {
       return H.bar(s.name, s.n, max, s.won ? 'won' : '', s.n + ' at ' + s.name + (s.late ? ', ' + s.late + ' with an overdue step' : ''));
     })));
     box.appendChild(h('div', { class: 'stats' },
-      h('div', { class: 'stat' + (p.moves.length ? ' warn' : '') }, h('b', { class: 'num' }, p.moves.length), h('span', null, 'need a move')),
-      h('div', { class: 'stat' + (p.oldest > 30 ? ' bad' : p.oldest ? ' warn' : '') }, h('b', { class: 'num' }, p.oldest ? p.oldest + 'd' : '0'), h('span', null, 'oldest overdue')),
-      h('div', { class: 'stat' }, h('b', { class: 'num' }, p.out), h('span', null, p.outName.toLowerCase()))));
+      g ? h('div', { class: 'stat' + (p.won < g.target ? ' warn' : '') }, h('b', { class: 'num' }, p.won + ' of ' + g.target), h('span', null, p.wonWord + ' · G' + g.no + ' target')) : null,
+      h('div', { class: 'stat' + (p.moves.length ? ' warn' : '') }, h('b', { class: 'num' }, p.moves.length), h('span', null, 'need a move' + (p.oldest ? ', oldest ' + p.oldest + 'd late' : '')))));
   };
 
   function fact(label, value, cls) { return value ? h('span', { class: 'fact-i' + (cls ? ' ' + cls : '') }, h('i', null, label), ' ', value) : null; }
@@ -56,14 +66,16 @@
         h('div', { class: 'row-facts' }, key === 'opp'
           ? [fact('Champion', H.who(rec.champion)), rec.budgetHolder ? fact('Budget', H.who(rec.budgetHolder)) : fact('Budget', 'nobody named', 'warn-t'), fact('Deadline', rec.deadline ? H.fmtDate(rec.deadline) : ''), fact('Route', rec.vehicle), fact('Incumbent', rec.incumbent)]
           : [fact('Asked', rec.asked), fact('Objection', rec.objection, 'warn-t'), fact('Cheque', rec.cheque), fact('Lead', rec.owner ? H.whoText(rec.owner) : '')]),
-        rec.notes ? h('div', { class: 'kv' }, H.clip(rec.notes, 160)) : null, H.sources(evList(rec))));
+        note(rec), rec.notes ? h('div', { class: 'kv' }, H.clip(rec.notes, 160)) : null, H.sources(evList(rec))));
   }
   function mini(key, rec) {
     var nx = H.liveNext(rec), late = lateDays(rec), open = S.open === rec.id, o = H.ownerOf(nx && nx.who || rec.owner || '');
     return h('li', null, h('button', { type: 'button', class: 'bcard' + (late > 30 ? ' bad' : late ? ' warn' : '') + (open ? ' open' : ''), 'aria-expanded': String(open),
       onclick: function () { S.open = open ? '' : rec.id; H.render(); } },
       h('b', null, H.clip(nameOf(key, rec).split(':')[0], 48)),
-      h('span', { class: 'bc-next' }, nx ? H.clip(nx.action, 80) : 'No next step'),
+      h('span', { class: 'bc-next' + (nx ? '' : ' none') }, nx ? H.clip(nx.action, 80) : 'No next step'),
+      key === 'raise' && rec.objection ? h('span', { class: 'bc-obj' }, 'Objection: ' + H.clip(rec.objection, 70)) : null,
+      rec.triage && rec.triage.answer && nx && nx.date && rec.triage.date > nx.date ? h('span', { class: 'bc-obj' }, 'Newer note than this step') : null,
       h('span', { class: 'bc-meta' }, late ? h('span', { class: 'age-tag num ' + (late > 30 ? 'bad' : 'warn') }, late + 'd late') : nx && nx.date ? h('span', { class: 'kv' }, H.fmtDate(nx.date)) : null,
         H.goalChip(rec.goalId), o !== 'unassigned' ? h('span', { class: 'own o-' + o }, H.whoText(o)) : null)),
       open ? h('ul', { class: 'rows bc-x' }, card(key, rec, '')) : null);

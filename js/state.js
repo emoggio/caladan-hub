@@ -40,11 +40,11 @@
     var m = model(), max = Math.max.apply(null, m.items.map(function (i) { return i.needs.length; }).concat([m.loose.length, 1]));
     var feed = m.sigs.filter(function (x) { return x.rival || /round|fund|funding|window|contract/.test(x.s.kind); }).slice(0, 4);
     box.appendChild(h('div', { class: 'pm' },
-      h('div', { class: 'pm-col' }, h('h3', { class: 'p-sub' }, 'Needs by roadmap item'),
-        H.data.needs.length || m.items.length ? h('ul', { class: 'hbars' }, m.items.slice(0, 4).map(function (i) { return H.bar(H.clip(i.r.title || 'Untitled', 28), i.needs.length, max, i.proposed ? 'prop' : '', (i.r.title || '') + (i.proposed ? ' (proposed)' : '')); }), H.bar('Not in the plan', m.loose.length, max, 'loose'))
+      h('div', { class: 'pm-col' }, h('h3', { class: 'p-sub' }, m.items.every(function (i) { return i.proposed; }) ? 'Needs behind each item of the plan (unconfirmed)' : 'Needs by roadmap item'),
+        H.data.needs.length || m.items.length ? h('ul', { class: 'hbars' }, m.items.slice(0, 4).map(function (i) { return H.bar(H.clip(i.r.title || 'Untitled', 28), i.needs.length, max, '', i.r.title || ''); }), H.bar('Not in the plan', m.loose.length, max, 'loose'))
           : h('p', { class: 'p-empty' }, 'No needs or roadmap yet')),
-      h('div', { class: 'pm-col' }, h('h3', { class: 'p-sub' }, 'Standing questions · new evidence'),
-        m.qs.length ? h('ul', { class: 'qs' }, m.qs.slice(0, 5).map(function (q) { return h('li', { class: q.fresh ? 'fresh' : '', title: q.text }, h('i', { class: 'qmark', 'aria-hidden': 'true' }), h('span', { class: 'q-t' }, q.text), h('b', { class: 'num' }, q.fresh ? '+' + q.fresh : '0')); }))
+      h('div', { class: 'pm-col' }, h('h3', { class: 'p-sub' }, 'Standing questions · last evidence'),
+        m.qs.length ? h('ul', { class: 'qs' }, m.qs.slice(0, 5).map(function (q) { return h('li', { class: q.fresh ? 'fresh' : '', title: q.text }, h('i', { class: 'qmark', 'aria-hidden': 'true' }), h('span', { class: 'q-t' }, q.text), h('b', { class: 'num' + (q.hits.length ? '' : ' kv') }, q.fresh ? '+' + q.fresh : q.hits.length ? H.fmtDate(q.hits[0].s.date) : 'none yet')); }))
           : h('p', { class: 'p-empty' }, 'No standing questions')),
       h('div', { class: 'pm-col wide' }, h('h3', { class: 'p-sub' }, 'Rivals and money, newest'), feed.length ? h('ul', { class: 'ticks' }, feed.map(sigRow)) : h('p', { class: 'p-empty' }, 'No signals recorded'))));
   };
@@ -70,9 +70,9 @@
       return h('li', { class: 'row' }, h('span', { class: 'q' }, n.statement || 'No statement'), n.status === 'proposed' ? h('span', { class: 'chip warn' }, 'unchecked') : null,
         h('div', { class: 'kv' }, n.who ? H.who(n.who) : 'Someone', n.org && H.data.nodes.has(n.org) ? [' · ', H.who(n.org)] : null, n.date ? ' · ' + H.fmtDate(n.date) : ''));
     }
-    box.appendChild(h('p', { class: 'p-say' }, H.data.needs.length + ' needs · ' + m.items.length + ' roadmap items (' + m.items.filter(function (i) { return i.proposed; }).length + ' proposed) · ' + m.loose.length + ' not in the plan · ' + m.sigs.length + ' signals'));
+    box.appendChild(h('p', { class: 'p-say' }, H.data.needs.length + ' needs · ' + m.items.length + ' roadmap items (' + m.items.filter(function (i) { return i.proposed; }).length + ' not yet confirmed) · ' + m.loose.length + ' not in the plan · ' + m.sigs.length + ' signals'));
     m.items.forEach(function (i) {
-      box.appendChild(H.fold(S, 'r' + i.r.id, (i.proposed ? 'Proposed: ' : '') + (i.r.title || 'Untitled'), function (b) {
+      box.appendChild(H.fold(S, 'r' + i.r.id, (i.r.title || 'Untitled') + (i.proposed ? ' (unconfirmed plan)' : ''), function (b) {
         if (i.r.why) b.appendChild(h('p', { class: 'small muted' }, i.r.why));
         b.appendChild(i.needs.length ? h('ul', { class: 'rows' }, i.needs.map(need)) : h('p', { class: 'p-empty' }, 'No recorded need behind this'));
       }, H.plural(i.needs.length, 'need')));
@@ -80,7 +80,7 @@
     box.appendChild(H.fold(S, 'loose', 'Needs not in the plan', function (b) { b.appendChild(m.loose.length ? h('ul', { class: 'rows' }, m.loose.slice(0, 80).map(need)) : h('p', { class: 'p-empty' }, 'Every need is in the plan')); }, String(m.loose.length)));
     m.qs.forEach(function (q) {
       box.appendChild(H.fold(S, 'q' + q.id, q.text, function (b) { b.appendChild(q.hits.length ? h('ul', { class: 'ticks' }, q.hits.slice(0, 15).map(sigRow)) : h('p', { class: 'p-empty' }, 'No evidence filed yet')); },
-        (q.fresh ? '+' + q.fresh + ' in 14 d · ' : '') + q.hits.length + ' on file'));
+        (q.fresh ? '+' + q.fresh + ' in 14 d · ' : '') + (q.hits.length ? 'last ' + H.fmtDate(q.hits[0].s.date) + ' · ' + q.hits.length + ' on file' : 'no evidence yet')));
     });
   };
 })();

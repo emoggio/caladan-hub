@@ -151,6 +151,21 @@
     var s = Math.max(0, Math.round((Date.now() - t) / 1000));
     return s < 60 ? s + 's' : s < 3600 ? Math.round(s / 60) + 'm' : s < 172800 ? Math.round(s / 3600) + 'h' : Math.round(s / 86400) + 'd';
   };
+  /* "16:53 today", "09:10 yesterday", "12 Nov": a moment in London time, as a plain phrase */
+  H.londonWhen = function (iso) {
+    var t = Date.parse(iso || ''); if (isNaN(t)) return '';
+    var o = { timeZone: 'Europe/London' }, day = function (x) { return new Date(x).toLocaleDateString('en-GB', o); };
+    var time = new Date(t).toLocaleTimeString('en-GB', Object.assign({ hour: '2-digit', minute: '2-digit' }, o));
+    if (day(t) === day(Date.now())) return time + ' today';
+    if (day(t) === day(Date.now() - 864e5)) return time + ' yesterday';
+    return new Date(t).toLocaleDateString('en-GB', Object.assign({ day: 'numeric', month: 'short' }, o));
+  };
+  /* the newest updatedAt (or createdAt) across the given collections; nodes is a Map */
+  H.newest = function (cols) {
+    var best = '';
+    cols.forEach(function (c) { var v = H.data[c]; if (!v) return; (v instanceof Map ? Array.from(v.values()) : v).forEach(function (d) { var t = d.updatedAt || d.createdAt || ''; if (typeof t === 'string' && t > best) best = t; }); });
+    return best;
+  };
   /* a small labelled horizontal bar: label, bar to scale, value. cls colours the fill. */
   H.bar = function (label, n, max, cls, title) {
     return H.h('li', { class: 'hb' + (cls ? ' ' + cls : ''), title: title || null }, H.h('span', { class: 'hb-l' }, label),
