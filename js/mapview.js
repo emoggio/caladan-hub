@@ -93,12 +93,12 @@
     function sx(o) { return o.x * v.k + v.x; } function sy(o) { return o.y * v.k + v.y; }
     function text(x, y, str, cls, anchor) { g.appendChild(s('text', { x: x, y: y, class: cls, 'text-anchor': anchor || 'start' }, str)); }
     L.core.forEach(function (c) {
-      var hq = c.id === HUB.company, x = sx(c), y = sy(c) + 4, w = c.name.length * 6.6 + 4, rr = c.r * v.k;
-      if (hq) { boxes.push([x - rr, y - 4 - rr, x + rr, y - 4 + rr]); boxes.push([x - w / 2, y - rr - 20, x + w / 2, y - rr - 6]); text(x, y - rr - 9, c.name, 'lab strong', 'middle'); return; }
+      var hq = c.id === HUB.company, x = sx(c), y = sy(c) + 4, w = c.name.length * 7.2 + 4, rr = c.r * v.k;
+      if (hq) { boxes.push([x - rr, y - 4 - rr, x + rr, y - 4 + rr]); boxes.push([x - w / 2, y - rr - 20, x + w / 2, y - rr - 6]); text(x, y - rr - 9, c.name, 'mlab strong', 'middle'); return; }
       var left = c.x < 0, tx = x + (left ? -rr - 4 : rr + 4);
       var cb = left ? [tx - w, y - 11, x + rr, y + 4] : [x - rr, y - 11, tx + w, y + 4];
       if (!free(cb)) { boxes.push([x - rr, y - 4 - rr, x + rr, y - 4 + rr]); return; }     /* a territory name is in the way: the dot's colour still says who */
-      boxes.push(cb); text(tx, y, c.name, 'lab strong', left ? 'end' : 'start');
+      boxes.push(cb); text(tx, y, c.name, 'mlab strong', left ? 'end' : 'start');
     });
     /* territory names sit outside the outer ring, clamped to the frame so they stay readable when zoomed in */
     L.groups.forEach(function (gr) {
@@ -151,7 +151,7 @@
     cand.forEach(function (o) {
       if (!must[o.id] && shown >= budget) return;
       /* names in the data often carry a note after a dash; the map shows the name only */
-      var str = H.clip(o.name.split(/ [—–-] /)[0], 24), w = str.length * 6.5 + 4, x = sx(o), y = sy(o), r = (o.foot || o.r) * v.k + 5;
+      var str = H.clip(o.name.split(/ [—–-] /)[0], 24), w = str.length * 7 + 4, x = sx(o), y = sy(o), r = (o.foot || o.r) * v.k + 5;
       var tries = [[x + r, y + 4, 'start', x + r, x + r + w], [x - r, y + 4, 'end', x - r - w, x - r], [x, y + r + 10, 'middle', x - w / 2, x + w / 2], [x, y - r - 2, 'middle', x - w / 2, x + w / 2]];
       /* a name that has to show (selected, hovered, on a route) keeps looking further out rather than sit on another */
       if (must[o.id]) for (var j = 1; j <= 5; j++) tries.push([x + r, y + 4 + j * 14, 'start', x + r, x + r + w], [x - r, y + 4 - j * 14, 'end', x - r - w, x - r]);
@@ -161,7 +161,7 @@
         var ok = b[0] >= 2 && b[2] <= z.w - 2 && b[1] >= 2 && b[3] <= z.h - 2 && free(b); boxes[own[o.id]] = mine;   /* never cut off at the frame */
         if (ok) {
           boxes.push(b); shown++;
-          text(t[0], t[1], str, 'lab' + (must[o.id] ? ' strong' : ''), t[2]);
+          text(t[0], t[1], str, 'mlab' + (must[o.id] ? ' strong' : ''), t[2]);
           return;
         }
       }
@@ -172,6 +172,7 @@
   }
 
   /* ---------- world drawing ---------- */
+  var STORY = { introduced: 1, invested: 1, customer: 1, partner: 1 };
   function drawWorld() {
     var w = H.clear(el.world), lens = H.lensByKey(S.lens);
     /* brand gradient in map units, for the warmest route */
@@ -199,11 +200,19 @@
       var a = L.pos[e.source], b = L.pos[e.target];
       w.appendChild(s('line', { x1: a.x, y1: a.y, x2: b.x, y2: b.y, class: 'money-link' }));
     });
-    /* every relationship between two bubbles on the map; landscape links appear when the landscape is shown */
+    /* every relationship between two bubbles on the map (landscape links appear when the landscape is shown). All of them
+       light up for the bubble under the pointer or selected; at rest only the ones that tell a story are drawn: links to
+       the founders and Caladan repeat the colours, staff sit beside their organisation already, and "knows" / "part of"
+       are background */
     net = (routes || links.length) ? [] : H.data.edges.filter(function (e) {
       var a = L.pos[e.source], b = L.pos[e.target]; return a && b && e.source !== e.target;
     });
-    net.forEach(function (e) {
+    /* on a phone or the wall's small preview even these are a tangle: draw none at rest; a tap still shows them */
+    var roomy = !S.small && !(el.stage && el.stage.clientWidth < 600);
+    net.filter(function (e) {
+      var a = L.pos[e.source], b = L.pos[e.target]; if (!roomy) return false;
+      return STORY[e.kind] && !a.core && !b.core && a.org !== e.target && b.org !== e.source;
+    }).forEach(function (e) {
       var a = L.pos[e.source], b = L.pos[e.target];
       w.appendChild(s('line', { x1: a.x, y1: a.y, x2: b.x, y2: b.y, class: 'net-link k-' + e.kind }));
     });

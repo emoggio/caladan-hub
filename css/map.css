@@ -35,7 +35,7 @@
 .route-line { fill: none; stroke: var(--muted); stroke-width: 2; stroke-dasharray: 5 5; opacity: .7; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
 .route-line.best { stroke: url(#cw-route); stroke-width: 4.5; stroke-dasharray: none; opacity: 1; }
 .over { pointer-events: none; }
-.over text { font: 500 11.5px var(--font-body); fill: var(--ink2); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
+.over text { font: 500 12.5px var(--font-body); fill: var(--ink2); paint-order: stroke; stroke: var(--surface); stroke-width: 3.5px; stroke-linejoin: round; }
 .over text.strong { fill: var(--ink); font-weight: 600; }
 .over text.core-lab { fill: var(--bg); stroke: none; font: 600 11px var(--font-display); }
 .over text.terr { font: 600 11px var(--font-display); letter-spacing: .05em; text-transform: uppercase; fill: var(--ink); stroke: none; }

@@ -59,6 +59,8 @@
       sw('big o-none', 'organisation'), sw('dot o-none', 'person'),
       sw('m-due', 'thick red ring: next step due'), sw('m-cold', 'dashed amber ring: gone quiet ' + HUB.coldAfterDays + '+ days'),
       h('span', { class: 'lg-title' }, 'Distance'),
-      h('span', null, 'centre = recent contact, outer ring = never contacted'));
+      h('span', null, 'centre = recent contact, outer ring = never contacted'),
+      h('span', { class: 'lg-title' }, 'Lines'),
+      h('span', null, 'introductions, investments, customers, partners (on a phone: tap a bubble); point at or tap a bubble for all its links'));
   };
 })();
