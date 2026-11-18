@@ -49,7 +49,7 @@ curl -s "$BRAIN_URL/rest/v1/rpc/brain_search" -H "apikey: $PUBLISHABLE_KEY" -H "
 | `brain_list` | `collection`, optional `fields` (array: only these fields), `match` (JSON the record must contain, e.g. `{"type":"person"}`), `lim` (default 50, max 500), `since` (ISO time), `order_by` (a field, highest/newest first) | compact rows, each with `id`. |
 | `brain_get` | `collection`, `id` | one full record with `version`, or `{"error":"not in the brain"}`. |
 | `brain_put` | `collection`, `id`, `patch` (object), `note` (why, one line), optional `if_version` | creates the record if new, otherwise merges `patch` into it (top-level fields). `{ok, created, version}`. |
-| `brain_changes` | optional `since`, `lim` (default 30) | recent changes: who, which record, which fields. |
+| `brain_changes` | optional `since`, `lim` (default 30, max 200, newest first) | recent changes: who, which record, which fields. |
 | `brain_undo` | `n` (a change number) | puts that record back as it was before change `n`. |
 
 ### Reading cheaply
@@ -62,7 +62,7 @@ Three small calls answer almost anything: `brain_start`, then `brain_search` or 
 - Never delete. To retire a record, set `"archived": true` and say why in `note`.
 - Every fact you write carries a **source and a date** (where it came from: an email subject, a meeting title and date, a chat with Eugenio on a date, a URL).
 - Ids are lowercase with underscores, prefixed as in section 3. Check with `brain_search` that a person or organisation is not already there (by name and by organisation) before creating one.
-- `settings` is changed by the founders only.
+- The API rejects bot writes to `settings` (founders only).
 
 ---
 
@@ -80,7 +80,7 @@ Each record lives in a **collection** and has an **id**. Dates are `YYYY-MM-DD`;
 | `email`, `linkedin` | contact handles, when known |
 | `tags` | array of short labels (`investor`, `competitor`, `customer`, …) |
 | `notes` | free text |
-| `touchpoints` | array of `{date, channel, who, context, ref:{type,title,url}}`. `channel`: email, meeting, call, signal, linkedin, event, intro, web, research. `who`: `Eugenio`, `Alex`, `Eugenio & Alex` or `Claude`/`Grok` (desk research is not contact). |
+| `touchpoints` | array of `{date, channel, who, context, ref:{type,title,url}}`. `channel`: email, meeting, call, signal, linkedin, event, intro, web, research. Granola meetings are stored as `call`, not `meeting`; when looking for meetings, check both. `who`: `Eugenio`, `Alex`, `Eugenio & Alex` (sometimes `Alex & Eugenio`) or `Claude`/`Grok` (desk research is not contact). |
 | `firstContact`, `lastContact` | dates |
 | `next` | the one next step: `{date, action, kind, who, status}`; `status` `open`, `done` or `dropped` |
 | `owner` | `eugenio`, `alex` or `both` |
@@ -94,7 +94,7 @@ Id prefixes: `n_` people and organisations the founders deal with; `c_` companie
 
 ### The spine: goals and standing questions
 
-- `goals`: `{n, text, owner, by, measure, target, current, unit, status, log[]}`. `status`: `on-track`, `at-risk`, `off-track`, `done`, `unknown`. Everything you rank, you rank by distance to a goal. If `current` is null, say the count is not recorded and ask the founder for it; never estimate it.
+- `goals`: `{n, text, owner, by, measure, target, current, unit, status}`. The field is `text`, not `title`, and there is no `log`. `status`: `on-track`, `at-risk`, `off-track`, `done`, `unknown`. Everything you rank, you rank by distance to a goal. If `current` is null, say the count is not recorded and ask the founder for it; never estimate it.
 - `pirs`: `{q, owner}`, the standing questions (first LOI, lead investor, non-dilutive money, the rival who could take the wedge, the Ukraine data feed). Answer against them when something relevant arrives.
 - `theses`: `{statement, confidence, status, due, evidence, log[]}`: bets with a confidence and a log of evidence.
 
@@ -114,13 +114,14 @@ Id prefixes: `n_` people and organisations the founders deal with; `c_` companie
 
 - `signals`: dated market events. `{kind, title, date, source, url, note, nodes[], segment, geo, amountUSD}`. `kind`: round, contract, product, programme, policy, window, fund, partnership, event, press. Id `sg_<slug>_<yyyymmdd>`.
 - `valuations`: `{company, node, stage, date, note, source, grade}`: rounds and valuations of comparable companies.
-- `research`: `{q, why, answer, sources, status}`: research questions and answers.
+- `research`: `{q, why, answer, sources, status}`: research questions and answers. Answer only when a founder asks; do not run, queue or sweep them on your own.
+- `findings`: alerts that are dismissed or acted on. Not a research queue.
 
 ### System
 
 - `status`: health of every routine. Id `<who>_<source>`, e.g. `grok_daily`, `grok_email`, `shared_research`. Fields: `lastAttempt`, `lastSuccess`, `lastError` (null when fine), `read`, `changed`. A source is **current** if `lastSuccess` is within 26 hours (weekly ones: 8 days), **failed** if `lastAttempt` is later than `lastSuccess`, otherwise **stale**.
 - `activity`: a log line per notable run, `{date, agent, summary, nodes[]}`. Prefer `status` for health; `brain_changes` already records every write.
-- `settings/main`: founders' settings (read-only for you).
+- `settings/main`: founders' settings. The API rejects bot writes.
 
 ---
 
@@ -138,7 +139,7 @@ Id prefixes: `n_` people and organisations the founders deal with; `c_` companie
 5. **Broken** (only if something is): what failed and what it affects.
 Then write `status/grok_daily`.
 
-**Calendar and email (each run)**: for meetings in the last day and the next day, and email threads with people in the brain: add touchpoints (subject or meeting title only, never email bodies), update `lastContact`, propose commitments and decisions you see, and flag new people who matter (do not create a person unless they serve a goal). For tomorrow's outside meetings, give the founder: who, last promise, their stated need, the one ask. Write `status/grok_email` or `status/grok_calendar`.
+**Calendar and email (each run)**: for meetings in the last day and the next day, and email threads with people in the brain: add touchpoints (subject or meeting title only, never email bodies), update `lastContact`, propose commitments and decisions you see, and flag new people who matter (do not create a person unless they serve a goal). Prep for an outside call goes out 30 to 60 minutes before, never the day before (see GROK-PLAYBOOK.md). Write `status/grok_email` or `status/grok_calendar`.
 
 **Weekly (Monday)**: scoreboard against goals, both pipelines (what moved, what has no next step), stale commitments, and up to 5 market signals worth writing. Write `status/grok_weekly`.
 
@@ -150,7 +151,7 @@ Run at the start of every routine and whenever a founder asks "is everything wor
 
 1. `brain_start`. If any `health` entry is failed or stale, report it under **Broken** with what it affects.
 2. Pipelines: `brain_list` `opportunities` and `raise` with `fields: ["name","stage","next","updatedAt"]`. Flag records with no open next step, or a `next.date` in the past.
-3. Commitments: `brain_list` `commitments` with `match: {"status":"open"}`. Flag those more than 7 days past `due`.
+3. Commitments: `brain_list` `commitments` with `match: {"status":"proposed"}` and with `match: {"status":"open"}` (most are still `proposed`; matching only `open` misses them). Flag those more than 7 days past `due`.
 4. Goals: flag any with `status` `unknown` or `current` null; ask the owner for the number.
 5. Changes: `brain_changes` since your last run. Flag anything that looks wrong (a stage moving backwards, a large array suddenly shorter, a write by an unknown writer). Undo only what you wrote yourself in error; ask before undoing a founder's change.
 6. Duplicates: when you notice two records for the same person or organisation, do not merge them; tell the founders which two and propose which to archive.
@@ -161,4 +162,4 @@ Always write your own status record at the end of a run, truthfully: `lastAttemp
 
 ## 6. The control room
 
-`https://emoggio.github.io/caladan-hub/` shows the same data for the founders: system lights (from `status`), what needs doing, goals, customers, raise, product and the network map. It is for looking; you do not need it. If a founder says a light is red, check `status` and `brain_changes`.
+`https://emoggio.github.io/caladan-hub/` is the only control room. It reads from the database, which is the single master: system lights (from `status`), what needs doing, goals, customers, raise, product and the network map. It is for looking; you do not need it. The old claude.ai hub is retired; do not point anyone there or treat it as live. If a founder says a light is red, check `status` and `brain_changes`.

@@ -4,7 +4,7 @@ How to use the Caladan brain and the founders' other sources well. GROK.md is th
 
 ## Why this exists
 
-The founders gathered a lot of knowledge (meetings, notes, research, people, competitors) but it is too much to read. The bot does the reading so the founder doesn't have to: prepare them for meetings, connect people, spot what they are missing or unsure of, suggest people to look up, research topics, competitors and ideas. Help only when it is useful; never send filler.
+The founders gathered a lot of knowledge (meetings, notes, research, people, competitors) but it is too much to read. The bot does the reading so the founder doesn't have to: prepare them for meetings, connect people, spot what they are missing or unsure of, suggest people to look up, competitors and ideas. Research happens only when a founder asks. Help only when it is useful; never send filler.
 
 ## Where things are
 
@@ -31,11 +31,11 @@ The founders gathered a lot of knowledge (meetings, notes, research, people, com
 
 ## Meeting prep (the most useful thing you do)
 
-For an outside meeting, shortly before it:
+Prep goes out 30 to 60 minutes before each outside call, never the day before. When calls are back to back, send the preps for the whole run together before the first.
 1. From the calendar invite: who, which organisation, what it is about.
 2. `brain_search` each attendee and their organisation: last touchpoint, last promise (either way), their stated need, pipeline stage, who introduced them.
 3. Only if the brain is thin or stale: last Gmail thread and Granola meeting with them; a quick web check on the organisation for news since the last signal.
-4. Give the founder a few lines: who they are, where we left it, what they need, the one ask, and anything risky or unknown. Flag sensitive points (notetakers, defence confidentiality).
+4. A first call gets a quick look-up of who they are. A repeat call gets what changed, open promises and the ask. Flag sensitive points (notetakers, defence confidentiality).
 Skip prep for internal or routine meetings unless asked.
 
 ## After a meeting, call or new Granola note
@@ -44,7 +44,7 @@ Write what was learned to the brain in the same session: touchpoint (title and d
 
 ## Being proactive without noise
 
-Reach out only when it changes what the founder does: a meeting needing prep, a promise about to slip, a pipeline record with no next step, a goal with no number, a new signal about a competitor or customer, a person worth meeting, a research question or idea tied to a goal. Each suggestion names who it serves and which goal. If nothing qualifies, say nothing.
+Reach out only when it changes what the founder does: a meeting needing prep, a promise about to slip, a pipeline record with no next step, a goal with no number, a new signal about a competitor or customer, a person worth meeting, an idea tied to a goal. Each suggestion names who it serves and which goal. If nothing qualifies, say nothing.
 
 ## The five rules (in order)
 
@@ -64,3 +64,4 @@ Reach out only when it changes what the founder does: a meeting needing prep, a 
 ## Lessons (append, dated, one line each)
 
 - 2026-11-18 (Eugenio's Grok): playbook created at Eugenio's request; routines are a safety net, the main value is on-demand answers and meeting prep.
+- 2026-11-18 (Eugenio's Grok): prep shortly before calls, not the day before; research only on a founder's request; duplicates merged and archived with founder approval; settings are founder-only.
