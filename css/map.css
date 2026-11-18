@@ -23,11 +23,11 @@
 .ring-lab { font: 500 12px var(--font-body); font-size: var(--cap, 12px); fill: var(--muted); letter-spacing: .04em; }
 .spoke { stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .mn { stroke-width: 1.4; vector-effect: non-scaling-stroke; }
-.mn.o { fill: color-mix(in srgb, var(--c) 55%, var(--surface)); stroke: var(--c); }
+.mn.o { fill: color-mix(in srgb, var(--c) 78%, var(--surface)); stroke: var(--c); stroke-width: 1.6; }
 .mn.p { fill: var(--c); stroke: var(--surface); stroke-width: 1; }
 .mn.o.o-none { fill: var(--surface); }
 .mn.p.o-none { fill: var(--surface); stroke: var(--muted); }
-.mn.dim { opacity: .4; }
+.mn.dim { opacity: .55; }
 .mn.core { fill: var(--c); stroke: var(--surface); stroke-width: 2; }
 .mn.core.hq { fill: var(--brand-black); stroke: var(--line); stroke-width: 1; }
 .money-link { stroke: var(--s1); stroke-width: 1; opacity: .4; vector-effect: non-scaling-stroke; }
@@ -48,7 +48,7 @@
 .map-legend { display: flex; flex-wrap: wrap; gap: 3px 14px; color: var(--ink2); align-items: center; font-size: 12.5px; }
 .map-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .map-legend .lg-title { font-weight: 700; color: var(--ink); }
-.sw { width: 12px; height: 12px; border-radius: 50%; flex: none; background: color-mix(in srgb, var(--c) 55%, var(--surface)); border: 1.5px solid var(--c); }
+.sw { width: 12px; height: 12px; border-radius: 50%; flex: none; background: color-mix(in srgb, var(--c) 78%, var(--surface)); border: 1.5px solid var(--c); }
 .sw.o-none { background: var(--surface); }
 .sw.big { width: 15px; height: 15px; } .sw.dot { width: 8px; height: 8px; }
 .sw.m-due { background: var(--surface); border: 2.5px solid var(--bad); }

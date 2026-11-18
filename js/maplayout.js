@@ -49,8 +49,16 @@
 
   /* Builds the units (an organisation with its people, or a person on their own) that get a place on the map. */
   function units(landscape, group) {
-    var D = H.data, out = [], placed = {};
-    function show(id) { return !H.isUs(id) && (landscape || !D.nodes.get(id)._.ref); }
+    var D = H.data, out = [], placed = {}, linked = {};
+    /* a landscape record joins the map when someone on the map is linked to it (Sophia's firm, a contact's investor):
+       the record stays as it is in the brain; the map only stops hiding it */
+    D.edges.forEach(function (e) {
+      var a = D.nodes.get(e.source), b = D.nodes.get(e.target);
+      if (!a || !b || H.isUs(e.source) || H.isUs(e.target)) return;
+      if (a._.ref && !b._.ref) linked[e.source] = 1;
+      if (b._.ref && !a._.ref) linked[e.target] = 1;
+    });
+    function show(id) { return !H.isUs(id) && (landscape || !D.nodes.get(id)._.ref || linked[id]); }
     D.nodes.forEach(function (n, id) {
       if (n.type === 'person' || !show(id)) return;
       var staff = (D.staff.get(id) || []).filter(show).map(function (p) { return D.nodes.get(p); });

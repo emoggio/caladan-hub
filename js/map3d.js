@@ -59,7 +59,7 @@
   function colour(n) {
     var c = cur.C[n.owner] || cur.C.none;
     if (n.id === cur.sel) return '#ffffff';
-    return lit(n) ? c : mix(c, 0.5);
+    return lit(n) ? c : mix(c, 0.35);
   }
   /* every relationship stays visible: brighter between two lit bubbles, bright blue for the focus, faint only while
      something else is in focus. The alpha in the colour sets each line's opacity. */
@@ -77,7 +77,7 @@
     G = window.ForceGraph3D({ controlType: 'orbit' })(gl)
       .backgroundColor(BG).showNavInfo(false).enableNodeDrag(false)
       .cooldownTicks(0).warmupTicks(0)
-      .nodeRelSize(4.2).nodeResolution(14).nodeOpacity(1).nodeVal('val')
+      .nodeRelSize(5.4).nodeResolution(16).nodeOpacity(1).nodeVal('val')
       .nodeColor(colour)
       .nodeLabel(function (n) { return n.core ? '' : '<div class="map3d-tip">' + esc(n.name) + '</div>'; })
       .linkColor(linkCol)
@@ -86,6 +86,8 @@
       .onNodeHover(function (n) { hover = n && !n.core ? n.id : ''; gl.style.cursor = hover ? 'pointer' : 'grab'; G.linkColor(G.linkColor()).linkWidth(G.linkWidth()); })
       .onNodeClick(function (n) { if (cur.pick && !n.core) cur.pick(n.id); })
       .onBackgroundClick(function () { if (cur.pick && cur.sel) cur.pick(''); });
+    /* flatter, brighter light so the founder colours read at full strength instead of shaded dark */
+    G.scene().children.forEach(function (o) { if (o.isAmbientLight) o.intensity *= 2.2; if (o.isDirectionalLight) o.intensity *= 0.5; });
   }
 
   /* labels: founders, the selection and hover always; then the biggest lit bubbles while they do not collide */
@@ -137,7 +139,7 @@
       if (!stage.isConnected) return;
       if (!G) make();
       wait.remove(); stage.appendChild(box);
-      cur.C = { eugenio: css('--eug', '#cc7a33'), alex: css('--alex', '#8f72ea'), both: css('--both', '#27a59b'), none: '#8a96a3', hq: '#f3f5f8' };
+      cur.C = { eugenio: css('--eug', '#cc7a33'), alex: css('--alex', '#8f72ea'), both: css('--both', '#27a59b'), none: '#93a9c9', hq: '#f3f5f8' };
       cur.hi = opt.hi || {}; cur.pick = opt.pick; cur.route = !!opt.route;
       var selChanged = cur.sel !== (opt.sel || ''); cur.sel = opt.sel || '';
       G.width(stage.clientWidth).height(stage.clientHeight);
