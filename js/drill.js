@@ -4,7 +4,7 @@
 (function () {
   var H = window.H, h = H.h;
   var S = { tab: 'steps', open: '', shown: 20, arm: '' };
-  var TITLES = { systems: 'Systems', goals: 'Goals', customers: 'Customers', raise: 'Raise', todo: 'Needs doing', state: 'Market and product' };
+  var TITLES = { systems: 'Systems', goals: 'Goals', customers: 'Customers', raise: 'Raise', todo: 'Needs doing', state: 'Product and market' };
   var OWNER = { eugenio: 'Eugenio', alex: 'Alex', both: 'Both', unassigned: 'No owner' };
   H.drills = Object.keys(TITLES);
   H.openTodo = function (tab) { if (tab === 'systems') return H.go('systems'); S.tab = tab || 'steps'; S.open = ''; S.shown = 20; S.arm = ''; if (H.view === 'todo') H.render(); else H.go('todo'); };

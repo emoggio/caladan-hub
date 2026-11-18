@@ -87,6 +87,7 @@ Each record lives in a **collection** and has an **id**. Dates are `YYYY-MM-DD`;
 | `fin` | company money: `{fundingUSD, lastRound{amountUSD,date,lead,type}, investors[], staff, founded, source}` |
 | `caps` | for rivals and us: twelve scores 0-3, keys `se phys ew cuas auto fpv bms aar ukr accr usv oem` (synthetic env, flight physics, EW, counter-UAS, autonomy data, FPV training, BMS link, replay, Ukraine data, accreditation, maritime, OEM library). `n_caladan` holds ours. |
 | `fund` | for a funding scheme: amount, deadline, eligibility |
+| `ref` | `true` for background landscape: kept off the map and out of counts. Set it to `false` once a founder is actually in touch with that organisation or person |
 
 Id prefixes: `n_` people and organisations the founders deal with; `c_` companies (competitors, investors, primes); `s_` simulation products and rivals; `r_`, `fd_`, `ndf_` reference landscape (agencies, funds by country, non-dilutive funding schemes). Reference records are context, not relationships; leave them out of counts of "who we know".
 
@@ -167,7 +168,7 @@ Always write your own status record at the end of a run, truthfully: `lastAttemp
 | Goals (timeline) | number against target; text when `current` is text; "count not recorded · waiting on X" when a founder passed it on | `n`, `text`/`short`, `current`, `target`, `unit`, `status`, `by`, `owner`, `triage` |
 | Needs doing | **Due now**: open `next` on people, organisations and pipeline cards, and `open` promises, dated today or earlier (the same action on several records counts once). **Waiting for yes / no**: `proposed` with no `triage.answer`. **With Alex / parked**: `proposed` with a `triage.answer` | `next`, `commitments`, `decisions`, `triage`, `who` |
 | Customers, Raise (boards) | one column per stage; a card is "need a move" only if its step is late, its deadline is within 14 days, or it has no next step; budget holder, objection and a `triage` note newer than the step show on the card | `name`/`investorId`, `stage`, `next`, `deadline`, `budgetHolder`, `objection`, `owner`, `goalId`, `triage` |
-| Network (2D or 3D map) | direction = kind of organisation, distance from centre = how recently we spoke, colour = which founder | `nodes`, `edges`, `touchpoints`, `lastContact`, `owner` |
+| Network (2D or 3D map) | direction = kind of organisation, distance from centre = how recently we spoke, colour = which founder; a line for every `edges` record between two bubbles. Records with `ref: true` are hidden landscape until a founder ticks "Show landscape", so a person whose only edge is `works_at` a `ref` organisation looks unconnected: once we are actually talking to an organisation, it should not stay `ref` | `nodes`, `edges`, `touchpoints`, `lastContact`, `owner`, `ref` |
 | Market | money by quarter and segment; which segments are heating up; latest signals | `signals.date`, `kind`, `segment`, `amountUSD` |
 | Rivals | overlap with us against money raised; capability matrix | `nodes.caps`, `nodes.fin.fundingUSD` |
 | Rounds | what companies like us raised; valuations over time | `valuations` |

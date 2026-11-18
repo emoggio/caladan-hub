@@ -43,7 +43,7 @@
     }
     L.nodes.forEach(function (o) { add(o, false); });
     L.core.forEach(function (c) { add(c, true); });
-    var links = H.data.edges.filter(function (e) { var a = byId[e.source], b = byId[e.target]; return a && b && !a.ref && !b.ref && e.source !== e.target; })
+    var links = H.data.edges.filter(function (e) { var a = byId[e.source], b = byId[e.target]; return a && b && e.source !== e.target; })
       .map(function (e) { return { source: e.source, target: e.target, kind: e.kind }; });
     /* one title per territory, floating at the middle of its bubbles */
     titles = (L.groups || []).map(function (g) {
@@ -59,7 +59,15 @@
   function colour(n) {
     var c = cur.C[n.owner] || cur.C.none;
     if (n.id === cur.sel) return '#ffffff';
-    return lit(n) ? c : mix(c, 0.78);
+    return lit(n) ? c : mix(c, 0.5);
+  }
+  /* every relationship stays visible: brighter between two lit bubbles, bright blue for the focus, faint only while
+     something else is in focus. The alpha in the colour sets each line's opacity. */
+  function linkCol(l) {
+    if (strong(l)) return 'rgba(90,162,255,1)';
+    if (cur.sel || hover || cur.route) return 'rgba(126,143,171,0.14)';
+    var byId = function (v) { return typeof v === 'object' ? v : null; }, a = byId(l.source), b = byId(l.target);
+    return a && b && lit(a) && lit(b) ? 'rgba(150,172,205,0.6)' : 'rgba(126,143,171,0.32)';
   }
 
   function make() {
@@ -69,12 +77,12 @@
     G = window.ForceGraph3D({ controlType: 'orbit' })(gl)
       .backgroundColor(BG).showNavInfo(false).enableNodeDrag(false)
       .cooldownTicks(0).warmupTicks(0)
-      .nodeRelSize(3.2).nodeResolution(14).nodeOpacity(0.95).nodeVal('val')
+      .nodeRelSize(4.2).nodeResolution(14).nodeOpacity(1).nodeVal('val')
       .nodeColor(colour)
       .nodeLabel(function (n) { return n.core ? '' : '<div class="map3d-tip">' + esc(n.name) + '</div>'; })
-      .linkColor(function (l) { return strong(l) ? '#3c8cff' : '#5b6878'; })
-      .linkOpacity(0.22)
-      .linkWidth(function (l) { return strong(l) ? 1.1 : 0; })
+      .linkColor(linkCol)
+      .linkOpacity(1)
+      .linkWidth(function (l) { return strong(l) ? 1.4 : 0; })
       .onNodeHover(function (n) { hover = n && !n.core ? n.id : ''; gl.style.cursor = hover ? 'pointer' : 'grab'; G.linkColor(G.linkColor()).linkWidth(G.linkWidth()); })
       .onNodeClick(function (n) { if (cur.pick && !n.core) cur.pick(n.id); })
       .onBackgroundClick(function () { if (cur.pick && cur.sel) cur.pick(''); });

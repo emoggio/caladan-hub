@@ -199,9 +199,9 @@
       var a = L.pos[e.source], b = L.pos[e.target];
       w.appendChild(s('line', { x1: a.x, y1: a.y, x2: b.x, y2: b.y, class: 'money-link' }));
     });
-    /* every relationship between two bubbles on the map, faint; reference-only landscape is left out */
+    /* every relationship between two bubbles on the map; landscape links appear when the landscape is shown */
     net = (routes || links.length) ? [] : H.data.edges.filter(function (e) {
-      var a = L.pos[e.source], b = L.pos[e.target]; return a && b && !a.ref && !b.ref && e.source !== e.target;
+      var a = L.pos[e.source], b = L.pos[e.target]; return a && b && e.source !== e.target;
     });
     net.forEach(function (e) {
       var a = L.pos[e.source], b = L.pos[e.target];
