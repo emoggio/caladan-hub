@@ -3,12 +3,12 @@
    States: ok (ran inside its window), stale (ran, but too long ago), failed (last try did not succeed), never, skipped. */
 (function () {
   var H = window.H, h = H.h;
-  var FEEDS = [['calendar', 'Calendar'], ['gmail', 'Email'], ['granola', 'Notes'], ['drive', 'Drive'], ['brief', 'Brief'], ['prep', 'Prep'], ['folder', 'Bot folder'], ['notify', 'Notify']];
-  var SHARED = [['research', 'Research'], ['discovery', 'Discovery'], ['index', 'Index'], ['review', 'Review'], ['folder', 'Bot folder'], ['inbox', 'Bot inbox']];
-  var ROWS = [['eugenio', 'Eugenio', FEEDS], ['alex', 'Alex', FEEDS], ['shared', 'Shared', SHARED]];
-  var WEEKLY = { research: 1, discovery: 1, review: 1, shared_folder: 1 };   /* weekly feeds are allowed 8 days, the rest 26 hours */
+  /* Grok runs the brain now: one light per routine it reports on (status/grok_<routine>) */
+  var GROK = [['daily', 'Daily'], ['email', 'Email'], ['calendar', 'Calendar'], ['weekly', 'Weekly']];
+  var ROWS = [['grok', 'Grok', GROK]];
+  var WEEKLY = { weekly: 1, research: 1, discovery: 1, review: 1, shared_folder: 1 };   /* weekly feeds are allowed 8 days, the rest 26 hours */
   var WORD = { ok: 'ok', stale: 'stale', failed: 'failed', never: 'never run', skipped: 'skipped' };
-  var NAME = { calendar: 'calendar', gmail: 'email', granola: 'meeting notes', drive: 'Drive', brief: 'brief', prep: 'meeting prep', folder: 'bot folder', notify: 'notification', research: 'research', discovery: 'discovery', index: 'index', review: 'weekly review', inbox: 'bot inbox' };
+  var NAME = { daily: 'daily brief', weekly: 'weekly review', email: 'email', calendar: 'calendar', gmail: 'email', granola: 'meeting notes', drive: 'Drive', brief: 'brief', prep: 'meeting prep', folder: 'bot folder', notify: 'notification', research: 'research', discovery: 'discovery', index: 'index', review: 'weekly review', inbox: 'bot inbox' };
 
   function stateOf(d, id) {
     if (!d) return 'never';
@@ -26,7 +26,7 @@
       out.push({ id: id, who: r[0], whoName: r[1], src: f[0], label: f[1], doc: d || null, state: stateOf(d, id) });
     }); });
     Object.keys(by).forEach(function (id) { if (seen[id]) return; var i = id.indexOf('_'), w = id.slice(0, i), s = id.slice(i + 1);
-      out.push({ id: id, who: /^(eugenio|alex)$/.test(w) ? w : 'shared', whoName: H.cap(w), src: s, label: H.cap(s), doc: by[id], state: stateOf(by[id], id), extra: true }); });
+      out.push({ id: id, who: /^(eugenio|alex|grok)$/.test(w) ? w : 'shared', whoName: H.cap(w), src: s, label: H.cap(s), doc: by[id], state: stateOf(by[id], id), extra: true }); });
     return out;
   };
   function phrase(f) { return (f.who === 'shared' ? 'Shared ' : f.whoName + '’s ') + (NAME[f.src] || f.src); }

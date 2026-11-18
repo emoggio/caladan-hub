@@ -3,7 +3,7 @@
   var H = window.H, h = H.h, HUB = window.HUB;
   var NS = 'http://www.w3.org/2000/svg';
   var S = H.mapState = { lens: 'attention', landscape: false, sel: '', route: '', view: null };
-  var L = null, key = '', el = {}, routes = null, hi = {}, hover = null, raf = 0, fitK = 1, links = [];
+  var L = null, key = '', el = {}, routes = null, hi = {}, hover = null, raf = 0, fitK = 1, links = [], net = [];
 
   function s(tag, attrs, text) {
     var e = document.createElementNS(NS, tag);
@@ -120,6 +120,17 @@
       var a = L.pos[e.source], b = L.pos[e.target]; must[e.source] = must[e.target] = 1;
       g.appendChild(s('line', { x1: sx(a), y1: sy(a), x2: sx(b), y2: sy(b), class: 'money-strong' }));
     });
+    /* who is connected to whom: the links of the bubble under the pointer (or selected) are drawn strong and named by relationship */
+    var REL = { introduced: 'introduced', works_at: 'works at', part_of: 'part of', invested: 'invested', customer: 'customer', partner: 'partner', knows: 'knows', competes: 'competes' };
+    net.forEach(function (e) {
+      var on = (hover && (e.source === hover.id || e.target === hover.id)) || e.source === S.sel || e.target === S.sel;
+      if (!on) return;
+      var a = L.pos[e.source], b = L.pos[e.target]; must[e.source] = must[e.target] = 1;
+      g.appendChild(s('line', { x1: sx(a), y1: sy(a), x2: sx(b), y2: sy(b), class: 'net-strong k-' + e.kind }));
+      var mx = (sx(a) + sx(b)) / 2, my = (sy(a) + sy(b)) / 2, str = REL[e.kind] || e.kind, bw = str.length * 6 + 8;
+      g.appendChild(s('rect', { x: mx - bw / 2, y: my - 9, width: bw, height: 14, rx: 7, class: 'net-tag-bg' }));
+      text(mx, my + 2, str, 'net-tag', 'middle');
+    });
     if (routes) routes.ids.forEach(function (id) { must[id] = 1; });
     var cand = L.nodes.filter(function (o) {
       var x = sx(o), y = sy(o);
@@ -185,6 +196,14 @@
     links.forEach(function (e) {
       var a = L.pos[e.source], b = L.pos[e.target];
       w.appendChild(s('line', { x1: a.x, y1: a.y, x2: b.x, y2: b.y, class: 'money-link' }));
+    });
+    /* every relationship between two bubbles on the map, faint; reference-only landscape is left out */
+    net = (routes || links.length) ? [] : H.data.edges.filter(function (e) {
+      var a = L.pos[e.source], b = L.pos[e.target]; return a && b && !a.ref && !b.ref && e.source !== e.target;
+    });
+    net.forEach(function (e) {
+      var a = L.pos[e.source], b = L.pos[e.target];
+      w.appendChild(s('line', { x1: a.x, y1: a.y, x2: b.x, y2: b.y, class: 'net-link k-' + e.kind }));
     });
     L.nodes.forEach(function (o) {
       w.appendChild(s('circle', { cx: o.x, cy: o.y, r: o.r, class: 'mn ' + (o.person ? 'p' : 'o') + ' o-' + o.owner + (hi[o.id] ? '' : ' dim') }));

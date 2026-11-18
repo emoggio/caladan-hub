@@ -82,3 +82,11 @@
 .plist li { display: grid; grid-template-columns: 10px minmax(0, 1fr); gap: 8px; align-items: baseline; overflow-wrap: anywhere; }
 .plist .sw { background: var(--c); } .plist .sw.o-none { background: var(--surface); }
 .map-bar .btn[aria-pressed="true"] { border-color: var(--ink); }
+
+/* relationships: faint web, strong and named on hover or selection */
+.net-link { stroke: var(--muted, #8a96a3); stroke-width: .7; opacity: .16; vector-effect: non-scaling-stroke; }
+.net-link.k-introduced, .net-link.k-invested { opacity: .26; }
+.net-strong { stroke: var(--s4, #2f7cf6); stroke-width: 2; opacity: .9; }
+.net-strong.k-competes { stroke-dasharray: 4 3; }
+.net-tag-bg { fill: var(--bg, #0b0f14); opacity: .85; }
+.net-tag { font: 600 9.5px var(--font-display, Manrope, sans-serif); fill: var(--text, #e8edf2); letter-spacing: .02em; }
