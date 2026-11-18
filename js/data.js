@@ -156,7 +156,7 @@
     });
   };
   /* Replace the next step on a person/organisation (kind 'node') or a pipeline card. Never deletes it. The database
-     merges nested fields, so callers always pass the whole step with an explicit status. */
+     merges top-level fields only, so `next` is replaced whole: callers always pass the whole step with an explicit status. */
   H.setNext = function (kind, id, next) {
     if (kind !== 'node') return H.put(kind === 'opp' ? 'opportunities' : 'raise', id, { next: next });
     var patch = { next: next, updatedAt: stamp(), updatedBy: by() };

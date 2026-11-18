@@ -9,7 +9,7 @@
   function who() { return H.me || 'hub'; }
   function copy(x) { return x ? JSON.parse(JSON.stringify(x)) : x; }
   function seq(list, fn) { return list.reduce(function (p, x) { return p.then(function () { return fn(x); }); }, Promise.resolve()); }
-  /* the database merges nested fields, so putting a step back has to say "open" out loud */
+  /* `next` is replaced whole (the database merges top-level fields only), so putting a step back has to say "open" out loud */
   function reopened(next) { return Object.assign({}, next, { status: 'open' }); }
 
   var MEETING = { call: 1, meeting: 1, event: 1 };

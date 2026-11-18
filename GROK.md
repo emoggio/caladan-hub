@@ -11,7 +11,7 @@ Judgement, token efficiency and where things live: read GROK-PLAYBOOK.md in this
 ## 1. The five rules (apply them to everything you suggest and every routine you run, in this order)
 
 1. **Make the requirement less dumb.** Every task you suggest names who asked for it (Eugenio, Alex or a named contact, never "the team") and which goal it serves. If it has neither, list it under "No owner: delete?" instead of recommending it.
-2. **Delete.** Start every daily with what to drop: next steps older than 30 days with no movement, work both founders are doing separately, meetings that serve no goal, proposals nobody confirmed in 14 days.
+2. **Delete.** Start every brief and every Saturday upkeep with what to drop: next steps older than 30 days with no movement, work both founders are doing separately, meetings that serve no goal, proposals nobody confirmed in 14 days.
 3. **Simplify.** For what survives, propose the smallest version: one ask per message, one next step per relationship, the shortest warm route to a person.
 4. **Accelerate.** Only then make it faster: what can happen today instead of next week, what has waited more than 7 days on us.
 5. **Automate last.** Suggest automating a step only if it survived rules 1 to 4 and was done by hand at least three times. Never automate contact with anyone outside the two founders.
@@ -54,7 +54,7 @@ curl -s "$BRAIN_URL/rest/v1/rpc/brain_search" -H "apikey: $PUBLISHABLE_KEY" -H "
 
 ### Reading cheaply
 
-Three small calls answer almost anything: `brain_start`, then `brain_search` or `brain_list` with `fields`, then `brain_get` only for the records you need. Never list a whole large collection without `fields`. `nodes` has about 870 records and `edges` about 980; ask for the few fields you need.
+Three small calls answer almost anything: `brain_start`, then `brain_search` or `brain_list` with `fields`, then `brain_get` only for the records you need. Never list a whole large collection without `fields` (`brain_start` gives the counts; `nodes` and `edges` are the large ones). `brain_list` returns at most 500 rows and cannot page, so narrow it with `match` or `since`.
 
 ### Writing safely
 
@@ -147,7 +147,7 @@ Id prefixes: `n_` people and organisations the founders deal with; `c_` companie
 
 Run at the start of every routine and whenever a founder asks "is everything working":
 
-1. `brain_start`. If any `health` entry is failed or stale, report it under **Broken** with what it affects.
+1. `brain_start`. Its `health` list has `lastSuccess` and `lastError` but not `lastAttempt`; treat a non-null `lastError` as failed and an old `lastSuccess` as stale, and report either under **Broken** with what it affects.
 2. Pipelines: `brain_list` `opportunities` and `raise` with `fields: ["name","stage","next","updatedAt"]`. Flag records with no open next step, or a `next.date` in the past.
 3. Commitments: `brain_list` `commitments` with `match: {"status":"proposed"}` and with `match: {"status":"open"}` (most are still `proposed`; matching only `open` misses them). Flag those more than 7 days past `due`.
 4. Goals: flag any with `status` `unknown` or `current` null; ask the owner for the number.
@@ -160,7 +160,7 @@ Always write your own status record at the end of a run, truthfully: `lastAttemp
 
 ## 6. The control room
 
-`https://emoggio.github.io/caladan-hub/` is the only control room; the database is the single master and the old claude.ai hub is retired (do not point anyone there). The page only reads; you never need it, but the charts are only as good as the fields you fill. If a founder says a light is red or a chart looks wrong, check `status`, `brain_changes` and the fields below.
+`https://emoggio.github.io/caladan-hub/` is the only control room; the database is the single master and the old claude.ai hub is retired (do not point anyone there). The page mostly shows. A founder can make four kinds of change there, each recorded in `brain_changes` under their name: a goal's number, closing or dropping a next step, confirming or rejecting a proposal, and undoing their own change. You never need the page, but the charts are only as good as the fields you fill. If a founder says a light is red or a chart looks wrong, check `status`, `brain_changes` and the fields below.
 
 | Panel (opens to) | Draws | From |
 |---|---|---|
