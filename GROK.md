@@ -89,7 +89,7 @@ Each record lives in a **collection** and has an **id**. Dates are `YYYY-MM-DD`;
 | `fund` | for a funding scheme: amount, deadline, eligibility |
 | `ref` | `true` for background landscape: kept out of counts of who we know, and off the map unless something on the map links to it. Never change it to tidy the map |
 
-Id prefixes: `n_` people and organisations the founders deal with; `c_` companies (competitors, investors, primes); `s_` simulation products and rivals; `r_`, `fd_`, `ndf_` reference landscape (agencies, funds by country, non-dilutive funding schemes). Reference records are context, not relationships; leave them out of counts of "who we know".
+Id prefixes: `n_` people and organisations the founders deal with; `c_` companies (competitors, investors, primes); `s_` simulation products and rivals; `r_`, `fd_`, `ndf_` reference landscape (agencies, funds by country, non-dilutive funding schemes). Whether a record is landscape is decided by its `ref` flag, not its prefix: some `c_` companies are landscape too.
 
 ### Relationships: `edges`
 
@@ -169,10 +169,10 @@ Always write your own status record at the end of a run, truthfully: `lastAttemp
 | Needs doing | **Due now**: open `next` on people, organisations and pipeline cards, and `open` promises, dated today or earlier (the same action on several records counts once). **Waiting for yes / no**: `proposed` with no `triage.answer`. **With Alex / parked**: `proposed` with a `triage.answer` | `next`, `commitments`, `decisions`, `triage`, `who` |
 | Customers, Raise (boards) | one column per stage; a card is "need a move" only if its step is late, its deadline is within 14 days, or it has no next step; budget holder, objection and a `triage` note newer than the step show on the card | `name`/`investorId`, `stage`, `next`, `deadline`, `budgetHolder`, `objection`, `owner`, `goalId`, `triage` |
 | Network (2D or 3D map) | direction = kind of organisation, distance from centre = how recently we spoke, colour = which founder; a line for every `edges` record between two bubbles. A record with `ref: true` (landscape) appears on the map only when something on the map has an edge to it (a contact's firm, an investor of a company we deal with) or when a founder ticks "Show landscape". So record the edge: a person with no edge to their organisation sits alone | `nodes`, `edges`, `touchpoints`, `lastContact`, `owner`, `ref` |
-| Market | money by quarter and segment; which segments are heating up; latest signals | `signals.date`, `kind`, `segment`, `amountUSD` |
-| Rivals | overlap with us against money raised; capability matrix | `nodes.caps`, `nodes.fin.fundingUSD` |
-| Rounds | what companies like us raised; valuations over time | `valuations` |
-| Product | user needs behind each roadmap item; standing questions | `needs`, `roadmap`, `pirs` |
+| Product and market: Market tab | money by quarter and segment; which segments are heating up; latest signals | `signals.date`, `kind`, `segment`, `amountUSD` |
+| Product and market: Rivals tab | overlap with us against money raised; capability matrix | `nodes.caps`, `nodes.fin.fundingUSD` |
+| Product and market: Rounds tab | what companies like us raised; valuations over time | `valuations` |
+| Product and market: Product tab | user needs behind each roadmap item; standing questions | `needs`, `roadmap`, `pirs` |
 
 A record missing one of these fields simply drops out of that chart. When you add a rival, give it `caps`; when you add a round or contract, give it `amountUSD` and a `segment` from the list in section 3.
 
