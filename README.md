@@ -7,3 +7,5 @@ Bots and other AIs read two files, both once per session:
 - **[GROK-PLAYBOOK.md](GROK-PLAYBOOK.md)**: judgement. When and where to look, meeting prep, staying quiet unless it helps, and dated lessons any bot may append.
 
 Page code: `index.html`, `js/` (one file per panel; `charts.js` draws the charts, `map3d.js` the 3D map), `css/`.
+
+When you change any file in `js/` or `css/`, raise the `?v=` number on every link in `index.html` (one find-and-replace), so browsers fetch the new files instead of mixing old and new.
