@@ -9,6 +9,7 @@
   var BG = '#05070d';
   var G = null, box = null, labs = null, loading = null, raf = 0, hover = '', els = new Map(), titles = [];
   var cur = { L: null, hi: {}, sel: '', pick: null, C: null, route: false, flownTo: '' };
+  var pinned = {}, dragging = '';   /* bubbles a founder pulled and dropped, and the one being pulled now */
 
   function load() {
     if (window.ForceGraph3D) return Promise.resolve();
@@ -38,7 +39,9 @@
       var lat = core ? 0 : (hash(o.id) - 0.5) * 1.5 * Math.min(1, r / 180);
       var n = { id: o.id, name: o.name || (H.data.nodes.get(o.id) || {}).name || o.id, owner: core && !o.owner ? 'hq' : (o.owner || 'none'),
         core: !!core, person: !!o.person, ref: !!o.ref, group: o.group, val: Math.max(1, (o.r * o.r) / 10), imp: o.imp || 0 };
-      n.fx = n.x = r * Math.cos(lat) * Math.cos(a); n.fy = n.y = r * Math.sin(lat); n.fz = n.z = r * Math.cos(lat) * Math.sin(a);
+      /* h* is the bubble's home: its place by territory and recency. Only Caladan and the founders are nailed there. */
+      n.hx = n.x = r * Math.cos(lat) * Math.cos(a); n.hy = n.y = r * Math.sin(lat); n.hz = n.z = r * Math.cos(lat) * Math.sin(a);
+      if (core) { n.fx = n.x; n.fy = n.y; n.fz = n.z; }
       nodes.push(n); byId[n.id] = n;
     }
     L.nodes.forEach(function (o) { add(o, false); });
@@ -74,9 +77,10 @@
     box = document.createElement('div'); box.className = 'map3d';
     var gl = document.createElement('div'); gl.className = 'map3d-gl'; box.appendChild(gl);
     labs = document.createElement('div'); labs.className = 'map3d-labels'; box.appendChild(labs);
+    var hint = document.createElement('p'); hint.className = 'map3d-hint'; hint.textContent = 'Drag a bubble to pull it and its contacts. It stays where you drop it; Reset puts everything back.'; box.appendChild(hint);
     G = window.ForceGraph3D({ controlType: 'orbit' })(gl)
-      .backgroundColor(BG).showNavInfo(false).enableNodeDrag(false)
-      .cooldownTicks(0).warmupTicks(0)
+      .backgroundColor(BG).showNavInfo(false).enableNodeDrag(true)
+      .cooldownTicks(240).warmupTicks(0)
       .nodeRelSize(5.4).nodeResolution(16).nodeOpacity(1).nodeVal('val')
       .nodeColor(colour)
       .nodeLabel(function (n) { return n.core ? '' : '<div class="map3d-tip">' + esc(n.name) + '</div>'; })
@@ -85,10 +89,28 @@
       .linkWidth(function (l) { return strong(l) ? 1.4 : 0; })
       .onNodeHover(function (n) { hover = n && !n.core ? n.id : ''; gl.style.cursor = hover ? 'pointer' : 'grab'; G.linkColor(G.linkColor()).linkWidth(G.linkWidth()); })
       .onNodeClick(function (n) { if (cur.pick && !n.core) cur.pick(n.id); })
-      .onBackgroundClick(function () { if (cur.pick && cur.sel) cur.pick(''); });
+      .onBackgroundClick(function () { if (cur.pick && cur.sel) cur.pick(''); })
+      .onNodeDrag(function (n) { if (dragging !== n.id) { dragging = n.id; relink(); } })
+      .onNodeDragEnd(function (n) {
+        dragging = '';
+        /* it stays where it was dropped (after the library has let go of it) */
+        setTimeout(function () { n.fx = n.x; n.fy = n.y; n.fz = n.z; if (!n.core) pinned[n.id] = 1; relink(); G.d3ReheatSimulation(); }, 0);
+      });
+    /* Pulling: no free-running layout, so the map keeps its meaning. Every loose bubble is held to its home by a spring;
+       only the links of the bubble being pulled, or of a dropped one, pull too, so its direct contacts follow it. */
+    G.d3Force('charge', null).d3Force('center', null).d3Force('home', home3d());
+    G.d3Force('link').distance(70).strength(function (l) { var a = idOf(l.source), b = idOf(l.target); return a === dragging || b === dragging || pinned[a] || pinned[b] ? 0.25 : 0; });
     /* flatter, brighter light so the founder colours read at full strength instead of shaded dark */
     G.scene().children.forEach(function (o) { if (o.isAmbientLight) o.intensity *= 2.2; if (o.isDirectionalLight) o.intensity *= 0.5; });
   }
+
+  function home3d() {
+    var ns = [];
+    function f() { ns.forEach(function (n) { if (n.fx != null) return; n.vx += (n.hx - n.x) * 0.06; n.vy += (n.hy - n.y) * 0.06; n.vz += (n.hz - n.z) * 0.06; }); }
+    f.initialize = function (x) { ns = x; };
+    return f;
+  }
+  function relink() { var lf = G.d3Force('link'); lf.strength(lf.strength()); }
 
   /* labels: founders, the selection and hover always; then the biggest lit bubbles while they do not collide */
   function label(id, html, cls) {
@@ -113,6 +135,7 @@
       if (n.core) return cand(n, 5, 'core');
       if (n.id === cur.sel) return cand(n, 6, 'sel');
       if (n.id === hover) return cand(n, 5.5, 'hov');
+      if (pinned[n.id]) return cand(n, 5.2, 'pin');
       if (lit(n) && (n.val > 3 || cur.route || Object.keys(cur.hi).length < 60)) cand(n, 1 + Math.min(3, n.val / 8) + n.imp / 50, n.person ? 'p' : 'o');
     });
     titles.forEach(function (t) { cand(t, 4, 'title'); });
@@ -146,7 +169,7 @@
       /* new data rebuilds the layout object; redraw only if the bubbles actually moved, and keep the camera where it is */
       cur.L = L; var sig = L.nodes.length + ':' + Math.round(L.nodes.reduce(function (a, o) { return a + o.x * 3 + o.y; }, 0));
       if (cur.sig !== sig) {
-        var first = !cur.sig; cur.sig = sig; els.forEach(function (e) { e.remove(); }); els.clear();
+        var first = !cur.sig; cur.sig = sig; pinned = {}; els.forEach(function (e) { e.remove(); }); els.clear();
         G.graphData(build(L));
         if (first) G.cameraPosition(home(), { x: 0, y: 0, z: 0 }, 0);
       }
@@ -165,6 +188,12 @@
   };
   /* the starting view: far enough back that the whole map fits the width (a phone needs to stand further back) */
   function home() { var w = box && box.clientWidth || 900; return { x: 0, y: 260, z: ((cur.L && cur.L.R) || 600) * 2.1 * Math.max(1, Math.sqrt(820 / w)) }; }
-  H.map3dReset = function () { if (G && cur.L) G.cameraPosition(home(), { x: 0, y: 0, z: 0 }, 800); };
+  H.map3dReset = function () {
+    if (!G || !cur.L) return;
+    pinned = {};
+    G.graphData().nodes.forEach(function (n) { if (n.core) { n.fx = n.hx; n.fy = n.hy; n.fz = n.hz; } else { n.fx = n.fy = n.fz = undefined; } });
+    relink(); G.d3ReheatSimulation();
+    G.cameraPosition(home(), { x: 0, y: 0, z: 0 }, 800);
+  };
   H.map3dZoom = function (f) { if (!G) return; var p = G.cameraPosition(), t = G.controls().target; G.cameraPosition({ x: t.x + (p.x - t.x) / f, y: t.y + (p.y - t.y) / f, z: t.z + (p.z - t.z) / f }, { x: t.x, y: t.y, z: t.z }, 300); };
 })();

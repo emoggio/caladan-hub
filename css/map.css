@@ -101,6 +101,8 @@
 .m3l.p { font-weight: 500; color: #a9b4bf; }
 .m3l.core { color: #fff; font: 700 12px var(--font-display); }
 .m3l.sel, .m3l.hov { color: #fff; font-size: 13.5px; }
+.m3l.pin { color: #ffc56b; }
+.map3d-hint { position: absolute; left: 12px; bottom: 12px; margin: 0; font: 500 12px var(--font-body); color: #8a96a3; pointer-events: none; }
 .m3l.title { font: 700 10.5px var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: #8fb3ff; opacity: .8; }
 .map3d-tip { font: 500 12px var(--font-body); color: #fff; background: rgb(10 14 20 / .9); padding: 3px 8px; border-radius: 6px; }
 .map3d-wait { position: absolute; inset: 0; display: grid; place-items: center; color: #8a96a3; margin: 0; }
