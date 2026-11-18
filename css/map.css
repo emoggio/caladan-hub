@@ -1,7 +1,7 @@
 /* The network map, its side panel, and the People "by need" cards. Owner colours are shared by all three. */
-:root { --both: #009486; --ring: #eceef2; --ring-out: #f7f8fa; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --both: #2fd6c3; --ring: #121820; --ring-out: #0b0f14; } }
-:root[data-theme="dark"] { --both: #2fd6c3; --ring: #121820; --ring-out: #0b0f14; }
+:root { --both: #00a896; --ring: #eceef2; --ring-out: #f7f8fa; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --both: #3de0c8; --ring: #121820; --ring-out: #0b0f14; } }
+:root[data-theme="dark"] { --both: #3de0c8; --ring: #121820; --ring-out: #0b0f14; }
 .o-eugenio { --c: var(--eug); } .o-alex { --c: var(--alex); } .o-both { --c: var(--both); } .o-none { --c: var(--muted); }
 
 .map-bar { display: flex; gap: 8px 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
@@ -23,11 +23,11 @@
 .ring-lab { font: 500 12px var(--font-body); font-size: var(--cap, 12px); fill: var(--muted); letter-spacing: .04em; }
 .spoke { stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .mn { stroke-width: 1.4; vector-effect: non-scaling-stroke; }
-.mn.o { fill: color-mix(in srgb, var(--c) 78%, var(--surface)); stroke: var(--c); stroke-width: 1.6; }
+.mn.o { fill: var(--c); stroke: var(--c); stroke-width: 1.6; }
 .mn.p { fill: var(--c); stroke: var(--surface); stroke-width: 1; }
 .mn.o.o-none { fill: var(--surface); }
 .mn.p.o-none { fill: var(--surface); stroke: var(--muted); }
-.mn.dim { opacity: .65; }
+.mn.dim { opacity: .82; }
 .mn.core { fill: var(--c); stroke: var(--surface); stroke-width: 2; }
 .mn.core.hq { fill: var(--brand-black); stroke: var(--line); stroke-width: 1; }
 .money-link { stroke: var(--s1); stroke-width: 1; opacity: .4; vector-effect: non-scaling-stroke; }
@@ -84,11 +84,11 @@
 .map-bar .btn[aria-pressed="true"] { border-color: var(--ink); }
 
 /* relationships: faint web, strong and named on hover or selection */
-.net-link { stroke: color-mix(in srgb, var(--s1, #3987e5) 40%, var(--muted, #8a96a3)); stroke-width: 1; opacity: var(--net-a, .2); vector-effect: non-scaling-stroke; }
-.net-link.k-introduced, .net-link.k-invested, .net-link.k-customer, .net-link.k-partner { opacity: var(--net-b, .32); }
+.net-link { stroke: color-mix(in srgb, var(--s1, #5aa8ff) 70%, var(--muted, #8a96a3)); stroke-width: 1; opacity: var(--net-a, .3); vector-effect: non-scaling-stroke; }
+.net-link.k-introduced, .net-link.k-invested, .net-link.k-customer, .net-link.k-partner { opacity: var(--net-b, .45); }
 /* links need more weight on a dark background than on white */
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --net-a: .42; --net-b: .6; } }
-:root[data-theme="dark"] { --net-a: .42; --net-b: .6; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --net-a: .38; --net-b: .6; } }
+:root[data-theme="dark"] { --net-a: .38; --net-b: .6; }
 .net-link.k-competes { stroke-dasharray: 3 3; }
 .net-strong { stroke: var(--s1, #3987e5); stroke-width: 2; opacity: .9; }
 .net-strong.k-competes { stroke-dasharray: 4 3; }

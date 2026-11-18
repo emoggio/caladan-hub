@@ -53,20 +53,20 @@
 
   function lit(n) { return n.core || cur.hi[n.id] || n.id === cur.sel; }
   function strong(l) { var a = idOf(l.source), b = idOf(l.target), f = cur.sel || hover; return f ? (a === f || b === f) : cur.route ? !!(cur.hi[a] && cur.hi[b]) : false; }
-  /* a bubble's true colour; faded bubbles keep it and become see-through (the alpha in colour() sets the opacity),
+  /* a bubble's true colour; faded bubbles keep it and become slightly see-through (the alpha in colour() sets the opacity),
      so a dimmed orange is still orange, not brown */
   function tone(n) { return n.id === cur.sel ? '#ffffff' : (cur.C[n.owner] || cur.C.none); }
   function colour(n) {
     var c = tone(n); if (lit(n)) return c;
-    var v = parseInt(c.slice(1), 16); return 'rgba(' + (v >> 16 & 255) + ',' + (v >> 8 & 255) + ',' + (v & 255) + ',0.5)';
+    var v = parseInt(c.slice(1), 16); return 'rgba(' + (v >> 16 & 255) + ',' + (v >> 8 & 255) + ',' + (v & 255) + ',0.8)';
   }
   /* every relationship stays visible: brighter between two lit bubbles, bright blue for the focus, faint only while
      something else is in focus. The alpha in the colour sets each line's opacity. */
   function linkCol(l) {
-    if (strong(l)) return 'rgba(90,162,255,1)';
+    if (strong(l)) return 'rgba(120,185,255,1)';
     if (cur.sel || hover || cur.route) return 'rgba(126,143,171,0.14)';
     var byId = function (v) { return typeof v === 'object' ? v : null; }, a = byId(l.source), b = byId(l.target);
-    return a && b && lit(a) && lit(b) ? 'rgba(150,172,205,0.6)' : 'rgba(126,143,171,0.32)';
+    return a && b && lit(a) && lit(b) ? 'rgba(175,200,240,0.8)' : 'rgba(140,160,195,0.5)';
   }
 
   function make() {
@@ -169,7 +169,7 @@
       if (!stage.isConnected) return;
       if (!G) make();
       wait.remove(); stage.appendChild(box);
-      cur.C = { eugenio: css('--eug', '#ffb13b'), alex: css('--alex', '#a98bff'), both: css('--both', '#2fd6c3'), none: '#a3afbd', hq: '#f3f5f8' };
+      cur.C = { eugenio: css('--eug', '#ffb547'), alex: css('--alex', '#c08bff'), both: css('--both', '#3de0c8'), none: '#a3afbd', hq: '#f3f5f8' };
       cur.hi = opt.hi || {}; cur.pick = opt.pick; cur.route = !!opt.route;
       var selChanged = cur.sel !== (opt.sel || ''); cur.sel = opt.sel || '';
       G.width(stage.clientWidth).height(stage.clientHeight);

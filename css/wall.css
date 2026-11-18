@@ -3,9 +3,9 @@
    with a status chip, then the instrument. Panels size to what they hold; panels side by side in a row line up.
    Colour carries status (green ok, amber waiting or stale, red failed or overdue, grey unknown), always with a shape and a
    word beside it. Data bars use one blue. The brand gradient is on the mark and the master status only. */
-:root { --panel: var(--surface); --well: var(--raised); --both: #009486; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --both: #2bb3a8; } }
-:root[data-theme="dark"] { --both: #2bb3a8; }
+:root { --panel: var(--surface); --well: var(--raised); --both: #00a896; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --both: #3de0c8; } }
+:root[data-theme="dark"] { --both: #3de0c8; }
 .o-eugenio { --c: var(--eug); } .o-alex { --c: var(--alex); } .o-both { --c: var(--both); } .o-unassigned, .o-none { --c: var(--muted); }
 .g-good { --g: var(--good); } .g-warn { --g: var(--warn); } .g-bad { --g: var(--bad); } .g-done { --g: var(--good); } .g-none { --g: var(--muted); }
 .lvl-ok { --l: var(--good); } .lvl-warn { --l: var(--warn); } .lvl-bad { --l: var(--bad); } .lvl-none { --l: var(--muted); }
