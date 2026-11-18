@@ -93,8 +93,8 @@ Id prefixes: `n_` people and organisations the founders deal with; `c_` companie
 ### The spine: goals and standing questions
 
 - `goals`: `{n, text, owner, by, measure, target, current, unit, status, log[]}`. `status`: `on-track`, `at-risk`, `off-track`, `done`, `unknown`. Everything you rank, you rank by distance to a goal. If `current` is null, say the count is not recorded and ask the founder for it; never estimate it.
-- `pirs`: the standing questions (first LOI, lead investor, non-dilutive money, the rival who could take the wedge, the Ukraine data feed). Answer against them when something relevant arrives.
-- `theses`: bets with a confidence and a log of evidence.
+- `pirs`: `{q, owner}`, the standing questions (first LOI, lead investor, non-dilutive money, the rival who could take the wedge, the Ukraine data feed). Answer against them when something relevant arrives.
+- `theses`: `{statement, confidence, status, due, evidence, log[]}`: bets with a confidence and a log of evidence.
 
 ### Pipelines
 
@@ -105,19 +105,19 @@ Id prefixes: `n_` people and organisations the founders deal with; `c_` companie
 
 - `commitments`: promises made by or to the founders. `{date, who, to, what, due, source, status}`; `status` `proposed`, `open`, `done`, `dropped`.
 - `decisions`: `{date, decision, why, owner, source, status, nodes[], goalId}`; `status` `proposed`, `confirmed`, `rejected`. Anything you infer from an email or meeting is `proposed` until a founder confirms it in chat.
-- `needs`: user needs heard from a named person (`who`, `org`, `text`, `source`, `date`, optional `roadmapId`).
+- `needs`: user needs heard from a named person: `{statement, who, org, serves, tags, date, ref, roadmapId?}`.
 - `roadmap`: `{title, why, needIds[], status, quarter, owner}`; `status` `idea`, `planned`, `building`, `shipped`.
 
 ### Market
 
 - `signals`: dated market events. `{kind, title, date, source, url, note, nodes[], segment, geo, amountUSD}`. `kind`: round, contract, product, programme, policy, window, fund, partnership, event, press. Id `sg_<slug>_<yyyymmdd>`.
-- `valuations`: rounds and valuations of comparable companies.
-- `research`: research notes and memos.
+- `valuations`: `{company, node, stage, date, note, source, grade}`: rounds and valuations of comparable companies.
+- `research`: `{q, why, answer, sources, status}`: research questions and answers.
 
 ### System
 
 - `status`: health of every routine. Id `<who>_<source>`, e.g. `grok_daily`, `grok_email`, `shared_research`. Fields: `lastAttempt`, `lastSuccess`, `lastError` (null when fine), `read`, `changed`. A source is **current** if `lastSuccess` is within 26 hours (weekly ones: 8 days), **failed** if `lastAttempt` is later than `lastSuccess`, otherwise **stale**.
-- `activity`: a log line per notable run or change, `{date, who, text}`.
+- `activity`: a log line per notable run, `{date, agent, summary, nodes[]}`. Prefer `status` for health; `brain_changes` already records every write.
 - `settings/main`: founders' settings (read-only for you).
 
 ---
