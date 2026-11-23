@@ -53,12 +53,10 @@
   /* on a phone the profile is a bottom sheet over the map, so only the part above it counts as visible */
   function size() { var hh = el.stage.clientHeight; return { w: el.stage.clientWidth, h: el.sheet ? Math.min(hh, window.innerHeight * 0.55 - 20) : hh }; }
   function fit() {
-    var z = size(), room = Math.min(z.w, z.h) / 2;
-    /* open on the rings we have actually been in contact with; the never-contacted ring starts at the edge */
-    var r = L.rings[2].r1 + (L.rings[3].r1 - L.rings[3].r0) * 0.45;
-    fitK = room / (L.R + 40);
-    var k = /^(never|money|all)$/.test(S.lens) && !routes ? fitK : Math.max(fitK, Math.min(room / r, fitK * (z.w < 560 ? 1 : 1.7)));   /* these lenses need the outer ring in view */
-    return { k: k, x: z.w / 2, y: z.h / 2 };
+    /* the whole circle, territory names included, with a clear margin all round; + and − zoom in from there */
+    var z = size(), room = Math.min(z.w, z.h) / 2 - 20;
+    fitK = Math.max(0.05, room / (L.R + 60));
+    return { k: fitK, x: z.w / 2, y: z.h / 2 };
   }
   function focus(ids, zoom) {
     if (!el.stage || !el.stage.isConnected || !L) { S.view = null; S.pendingFocus = { ids: ids, zoom: zoom }; return; }
