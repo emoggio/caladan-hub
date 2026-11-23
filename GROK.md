@@ -45,7 +45,7 @@ curl -s "$BRAIN_URL/rest/v1/rpc/brain_search" -H "apikey: $PUBLISHABLE_KEY" -H "
 | Function | Arguments | Returns |
 |---|---|---|
 | `brain_start` | – | collections with counts and last update, goals, routine health, last 15 changes. **Call first, every session.** About 2-4k tokens. |
-| `brain_todo` | – | everything that needs doing, by the same rules as the control room: `due` steps (merged across person, organisation, card and promise, each with `late`, `owner`, `goal`, `docs`), `waiting` (proposals with no answer), `parked`, `promises` counts, pipeline `moves` with the reason, `goals` missing a number, `health` of the two routines with its state, `inbox`. About 4-5k tokens. |
+| `brain_todo` | – | everything that needs doing, by the same rules as the control room: `due` steps (merged across person, organisation, card and promise, each with `late`, `owner`, `goal`, `docs`), `waiting` (proposals with no answer), `parked`, `promises` counts, pipeline `moves` with the reason, `goals` missing a number, `health` of the three routines with its state, `inbox`. About 4-5k tokens. |
 | `brain_search` | `q`, optional `collections` (array), `lim` (default 20) | matches as `{doc, label, type, role, org, last, next}`; names first. `last` and `next` usually answer "where did we leave it" without a `brain_get`. |
 | `brain_list` | `collection`, optional `fields` (array: only these fields), `match` (JSON the record must contain, e.g. `{"type":"person"}`), `lim` (default 50, max 500), `since` (ISO time), `order_by` (a field, highest/newest first), `skip` (rows to skip, to page past 500) | compact rows, each with `id`. |
 | `brain_get` | `collection`, `id` | one full record with `version`, or `{"error":"not in the brain"}`. |
@@ -125,7 +125,7 @@ Id prefixes: `n_` people and organisations the founders deal with; `c_` companie
 
 ### System
 
-- `status`: health of every routine. Id `<who>_<routine>`. Only routines that run have one: `grok_email` (Eugenio's Grok: email and calendar triage), `grok_weekly` (Eugenio's Grok: the Saturday upkeep, for both founders) and `alex_grok_email` (Alex's Grok: email and calendar triage; listed under Systems as history, no light yet). Each Grok writes only its own. Do not write one for meeting prep or a one-off job. Fields: `lastAttempt`, `lastSuccess`, `lastError` (null when fine), `read`, `changed`. A source is **current** if `lastSuccess` is within 26 hours (weekly ones: 8 days), **failed** if `lastAttempt` is later than `lastSuccess`, otherwise **stale**.
+- `status`: health of every routine. Id `<who>_<routine>`. Only routines that run have one: `grok_email` (Eugenio's Grok: email and calendar triage), `grok_weekly` (Eugenio's Grok: the Saturday upkeep, for both founders) and `alex_grok_email` (Alex's Grok: email and calendar triage). Each Grok writes only its own. Do not write one for meeting prep or a one-off job. Fields: `lastAttempt`, `lastSuccess`, `lastError` (null when fine), `read`, `changed`. A source is **current** if `lastSuccess` is within 26 hours (weekly ones: 8 days), **failed** if `lastAttempt` is later than `lastSuccess`, otherwise **stale**.
 - `activity`: a log line per notable run, `{date, agent, summary, nodes[]}`. Prefer `status` for health; `brain_changes` already records every write.
 - `settings/main`: founders' settings. The API rejects bot writes.
 
@@ -163,7 +163,7 @@ Always write your own status record at the end of a run, truthfully: `lastAttemp
 
 | Panel (opens to) | Draws | From |
 |---|---|---|
-| Systems (slim bar; run history) | a light for `grok_email` and `grok_weekly` only; other status docs are listed as history | `status`, `activity` |
+| Systems (slim bar; run history) | a light for `grok_email`, `grok_weekly` and `alex_grok_email` only; other status docs are listed as history | `status`, `activity` |
 | Goals (timeline) | number against target; text when `current` is text; "count not recorded · waiting on X" when a founder passed it on | `n`, `text`/`short`, `current`, `target`, `unit`, `status`, `by`, `owner`, `triage` |
 | Needs doing | **Due now**: open `next` on people, organisations and pipeline cards, and `open` promises, dated today or earlier (the same action on several records counts once). **Waiting for yes / no**: `proposed` with no `triage.answer`. **With Alex / parked**: `proposed` with a `triage.answer` | `next`, `commitments`, `decisions`, `triage`, `who` |
 | Customers, Raise (boards) | one column per stage; a card is "need a move" only if its step is late, its deadline is within 14 days, or it has no next step; budget holder, objection and a `triage` note newer than the step show on the card | `name`/`investorId`, `stage`, `next`, `deadline`, `budgetHolder`, `objection`, `owner`, `goalId`, `triage` |

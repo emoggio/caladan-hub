@@ -5,11 +5,12 @@
   var H = window.H, h = H.h;
   /* Only routines that actually run get a light (status/grok_<routine>). The morning and evening briefs are off and
      meeting prep is judgement, not a feed, so neither has one. Any other status doc (claude_import, …) is history. */
-  var GROK = [['email', 'Email'], ['weekly', 'Saturday upkeep']];
-  var ROWS = [['grok', 'Grok', GROK]];
+  var GROK = [['email', 'Eugenio’s email'], ['weekly', 'Saturday upkeep']];
+  /* each founder's Grok writes its own email feed; Alex's is status/alex_grok_email (GROK.md section 3) */
+  var ROWS = [['grok', 'Grok', GROK], ['alex_grok', 'Alex’s Grok', [['email', 'Alex’s email']]]];
   var WEEKLY = { weekly: 1, research: 1, discovery: 1, review: 1, shared_folder: 1 };   /* weekly feeds are allowed 8 days, the rest 26 hours */
   var WORD = { ok: 'ok', stale: 'stale', failed: 'failed', never: 'never run', skipped: 'skipped' };
-  var NAME = { daily: 'daily brief', weekly: 'Saturday upkeep', email: 'email', calendar: 'calendar', gmail: 'email', granola: 'meeting notes', drive: 'Drive', brief: 'brief', prep: 'meeting prep', folder: 'bot folder', notify: 'notification', research: 'research', discovery: 'discovery', index: 'index', review: 'weekly review', inbox: 'bot inbox' };
+  var NAME = { daily: 'daily brief', weekly: 'Saturday upkeep', email: 'email', grok_email: 'Grok email', calendar: 'calendar', gmail: 'email', granola: 'meeting notes', drive: 'Drive', brief: 'brief', prep: 'meeting prep', folder: 'bot folder', notify: 'notification', research: 'research', discovery: 'discovery', index: 'index', review: 'weekly review', inbox: 'bot inbox' };
 
   function stateOf(d, id) {
     if (!d) return 'never';
@@ -30,7 +31,7 @@
       out.push({ id: id, who: /^(eugenio|alex|grok)$/.test(w) ? w : 'shared', whoName: H.cap(w), src: s, label: H.cap(s), doc: by[id], state: stateOf(by[id], id), extra: true }); });
     return out;
   };
-  function phrase(f) { return (f.who === 'shared' ? 'Shared ' : f.whoName + '’s ') + (NAME[f.src] || f.src); }
+  function phrase(f) { return (f.who === 'shared' ? 'Shared ' : / Grok$/.test(f.whoName) ? f.whoName + ' ' : f.whoName + '’s ') + (NAME[f.src] || f.src); }
   /* the master light: level ok | warn | bad | none, and one sentence */
   H.systemSummary = function () {
     var all = H.systems().filter(function (f) { return !f.extra; }), n = function (s) { return all.filter(function (f) { return f.state === s; }); };
@@ -42,7 +43,7 @@
     if (stale.length) { var worst = stale.slice().sort(function (a, b) { return a.doc.lastSuccess < b.doc.lastSuccess ? -1 : 1; })[0];
       return { level: 'warn', text: phrase(worst) + ' has not run for ' + H.age(worst.doc.lastSuccess) + more(stale), counts: counts }; }
     /* a routine that has not had its first run yet is not a fault */
-    if (never.length) return { level: 'ok', text: 'Running · ' + never.map(function (f) { return f.label.toLowerCase(); }).join(', ') + ' not run yet', counts: counts };
+    if (never.length) return { level: 'ok', text: 'Running · ' + never.map(phrase).join(', ') + ' not run yet', counts: counts };
     return { level: 'ok', text: 'All systems normal', counts: counts };
   };
 
