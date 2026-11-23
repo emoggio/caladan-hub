@@ -4,7 +4,7 @@
   var H = window.H, h = H.h, HUB = window.HUB;
   var FULL = { map: 1, profile: 1 };           /* screens that replace the wall; everything else is the wall or a drill-in over it */
   var OLD = { home: 'wall', briefing: 'wall', triage: 'todo', pipeline: 'customers', product: 'state', market: 'state', review: 'wall', people: 'map', paths: 'map', classic: 'map', hiring: 'wall', money: 'raise' };
-  var pending = false, soon = 0, after = [];
+  var pending = false, soon = 0, after = [], memo = '';   /* memo: the screen (and viewer) the last draw showed */
   H.view = 'wall';
 
   function viewFromHash() {
@@ -28,6 +28,10 @@
     if (!H.data.ready) return;
     drawMaster();
     var keepScroll = root.querySelector('.d-body') ? root.querySelector('.d-body').scrollTop : 0;
+    /* numbers and bars move only on a redraw of the same screen for the same viewer; a new screen just appears */
+    var same = memo === H.view + '|' + H.me, prev = null;
+    if (same && root.firstChild) try { prev = H.snapshot(root); } catch (e) { prev = null; }
+    memo = H.view + '|' + H.me;
     H.clear(root);
     root.className = 'view v-' + H.view;
     try {
@@ -40,6 +44,7 @@
         if (drill) { H.drillView(root, H.view); var b = root.querySelector('.d-body'); if (b) b.scrollTop = keepScroll; }
       }
       after.forEach(function (fn) { fn(); });
+      try { H.settle(root, prev); } catch (e) { console.error(e); }
     } catch (e) {
       console.error(e);
       H.clear(root).appendChild(h('div', { class: 'empty' }, h('h2', null, 'This screen could not be drawn'), h('p', null, 'Something in the data was not in the shape the page expects. Reload to try again; nothing was changed.')));
@@ -88,7 +93,7 @@
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     var a = document.activeElement, typing = a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
     if (e.key === '/' && !typing) { e.preventDefault(); document.getElementById('q').focus(); }
-    else if (e.key === 'Escape' && !typing && H.view !== 'wall') H.go('wall');
+    else if (e.key === 'Escape' && !typing && H.view !== 'wall') { if (H.drills.indexOf(H.view) >= 0) H.closeDrill(); else H.go('wall'); }
   });
 
   function start() {

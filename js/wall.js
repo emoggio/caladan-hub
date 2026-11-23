@@ -20,30 +20,45 @@
         h('span', { class: 'p-row' }, h('span', { class: 'p-title' }, title),
           upd ? h('span', { class: 'p-upd' + (old ? ' old' : ''), title: 'Newest change in what this panel reads (London time)' }, 'Updated ' + upd) : null,
           h('span', { class: 'p-open', 'aria-hidden': 'true' })),
-        h('span', { class: 'p-hero' }, h('span', { class: 'p-n num' }, head.n, h('small', null, ' ' + head.unit)),
-          h('span', { class: 'p-status lvl-' + lvl }, h('i', { class: 'p-light', 'aria-hidden': 'true' }), head.sub || WORD[lvl]))), body);
+        h('span', { class: 'p-hero' }, h('span', { class: 'p-n num' }, h('span', { 'data-k': 'panel-' + key + '-n', 'data-v': typeof head.n === 'number' ? head.n : null }, head.n), h('small', null, ' ' + head.unit)),
+          h('span', { class: 'p-status lvl-' + lvl }, h('i', { class: 'p-light', 'aria-hidden': 'true' }), head.sub || WORD[lvl]), head.side || null),
+        head.foot || null), body);
     try { build(body); } catch (e) { console.error(e); body.appendChild(h('p', { class: 'p-empty' }, 'This panel could not be drawn')); }
     return el;
   }
 
+  /* needs doing: one segmented bar of due steps by age, and under it the same buckets as a list with count and share */
+  var AGE = { today: 'Due today', week: '1-7 days late', month: '8-30 days late', old: 'Over 30 days late' };
   function todoPanel(box) {
     var b = H.backlog(), total = b.steps.length, props = H.confirmCount(), parked = H.parked().length, inbox = H.inboxPending().length;
-    function stat(n, label, cls, drill) { return h('button', { class: 'stat' + (cls ? ' ' + cls : ''), type: 'button', onclick: function (ev) { ev.stopPropagation(); H.openTodo(drill); } }, h('b', { class: 'num' }, n), h('span', null, label)); }
-    box.appendChild(h('div', { class: 'age', role: 'img', 'aria-label': 'Due steps by age: ' + b.buckets.map(function (x) { return x.label + ' ' + x.n; }).join(', ') },
-      b.buckets.map(function (x) { return h('div', { class: 'age-seg a-' + x.key, style: 'flex:' + Math.max(x.n, total ? total * 0.09 : 1) + ' 1 0' }, h('b', { class: 'num' }, x.n), h('span', null, x.label)); })));
+    function stat(n, label, cls, drill, k) { return h('button', { class: 'stat' + (cls ? ' ' + cls : ''), type: 'button', onclick: function (ev) { ev.stopPropagation(); H.openTodo(drill); } }, h('b', { class: 'num', 'data-k': 'todo-' + k, 'data-v': n }, n), h('span', null, label)); }
+    var shown = b.buckets.filter(function (x) { return x.n; });
+    box.appendChild(h('div', { class: 'agebar', role: 'img', 'aria-label': 'Due steps by age: ' + b.buckets.map(function (x) { return AGE[x.key] + ' ' + x.n; }).join(', ') },
+      total ? h('span', { class: 'agebar-f', 'data-k': 'todo-age-bar', 'data-v': total }, shown.map(function (x) {
+        return h('i', { class: 'a-' + x.key, style: 'flex:' + x.n + ' 1 0', 'data-k': 'todo-age-' + x.key + '-seg', 'data-v': x.n });
+      })) : null));
+    box.appendChild(h('ul', { class: 'agelist' }, b.buckets.map(function (x) {
+      return h('li', { class: 'a-' + x.key + (x.n ? '' : ' zero') }, h('i', { class: 'dot', 'aria-hidden': 'true' }), h('span', null, AGE[x.key]),
+        h('b', { class: 'num', 'data-k': 'todo-age-' + x.key, 'data-v': x.n }, x.n), h('span', { class: 'num agelist-p' }, total ? Math.round(x.n / total * 100) + '%' : '–'));
+    })));
     box.appendChild(h('div', { class: 'stats' },
-      stat(props, 'waiting for your yes / no', props ? 'warn' : '', 'proposals'),
-      stat(parked, 'answered, with Alex or parked', '', 'parked'),
-      stat(b.promises.length, 'promises open' + (b.promisesLate ? ', ' + b.promisesLate + ' late' : ''), b.promisesLate ? 'warn' : '', 'promises'),
-      inbox ? stat(inbox, 'inbox notes need an answer', 'warn', 'systems') : null));
+      stat(props, 'waiting for your yes / no', props ? 'warn' : '', 'proposals', 'waiting'),
+      stat(parked, 'answered, with Alex or parked', '', 'parked', 'parked'),
+      stat(b.promises.length, 'promises open' + (b.promisesLate ? ', ' + b.promisesLate + ' late' : ''), b.promisesLate ? 'warn' : '', 'promises', 'promises'),
+      inbox ? stat(inbox, 'inbox notes need an answer', 'warn', 'systems', 'inbox') : null));
   }
-  function todoHead() { var b = H.backlog(); return { n: b.steps.length, unit: 'due', bad: b.stale.length, warn: b.steps.length, sub: b.buckets[0].n + ' today' }; }
+  /* red when a step is over 30 days late, amber only when some are 8 to 30 days late; a fresh queue is not a warning */
+  function todoHead() { var b = H.backlog(), month = b.buckets.filter(function (x) { return x.key === 'month'; })[0]; return { n: b.steps.length, unit: 'due', bad: b.stale.length, warn: month ? month.n : 0, sub: b.buckets[0].n + ' today' }; }
 
   /* the network map, drawn small by the same code that draws it full screen */
   function networkPanel(box) {
     var M = H.mapState, D = H.data, cold = D.people.filter(function (p) { return H.isCold(p); }).length, never = D.people.filter(function (p) { return !p._.contacted; }).length;
-    box.appendChild(h('div', { class: 'stats tight' }, h('div', { class: 'stat' }, h('b', { class: 'num' }, D.people.length), h('span', null, 'people')),
-      h('div', { class: 'stat' + (cold ? ' warn' : '') }, h('b', { class: 'num' }, cold), h('span', null, 'gone quiet')), h('div', { class: 'stat' }, h('b', { class: 'num' }, never), h('span', null, 'never reached'))));
+    /* crossed the cold line in the last 7 days: same last-contact date and the same coldAfterDays the cold test uses */
+    var C = window.HUB.coldAfterDays, newly = D.people.filter(function (p) { var d = H.daysSince(p._.last); return H.isCold(p) && d < C + 7; }).length;
+    box.appendChild(h('div', { class: 'stats tight' }, h('div', { class: 'stat' }, h('b', { class: 'num', 'data-k': 'net-people', 'data-v': D.people.length }, D.people.length), h('span', null, 'people')),
+      h('div', { class: 'stat' + (cold ? ' warn' : '') }, h('b', { class: 'num', 'data-k': 'net-quiet', 'data-v': cold }, cold), h('span', null, 'gone quiet'),
+        h('small', { class: 'stat-d num', 'data-k': 'net-quiet-week', 'data-v': newly }, newly ? '+' + newly + ' went quiet this week' : 'none went quiet this week')),
+      h('div', { class: 'stat' }, h('b', { class: 'num', 'data-k': 'net-never', 'data-v': never }, never), h('span', null, 'never reached'))));
     var radar = h('div', { class: 'radar' }), open = h('button', { class: 'radar-open', type: 'button', 'aria-label': 'Open the network map full screen', onclick: function () { M.view = null; M.lens = M.lens || 'attention'; H.go('map'); } });
     box.appendChild(h('div', { class: 'radar-wrap' }, radar, open));
     H.afterRender(function () {

@@ -32,16 +32,26 @@
     return h('li', { class: 'tick' }, h('span', { class: 'num tick-d' }, H.fmtDate(s.date)), h('span', { class: 'tick-k' }, x.rival ? 'Rival' : H.cap(s.kind || 'signal')),
       h('span', { class: 'tick-t', title: s.title }, s.title), s.amountUSD ? h('b', { class: 'num' }, H.money(s.amountUSD)) : null);
   }
+  /* signals per week for the last 12 weeks (by the date of the event), and the last 4 weeks against the 4 before */
+  function weekly(sigs) {
+    var wk = []; for (var i = 0; i < 12; i++) wk.push(0);
+    sigs.forEach(function (x) { var d = H.daysSince(x.s.date); if (d != null && d >= 0 && d < 84) wk[11 - Math.floor(d / 7)]++; });
+    var now4 = wk.slice(8).reduce(function (a, b) { return a + b; }, 0), prev4 = wk.slice(4, 8).reduce(function (a, b) { return a + b; }, 0);
+    return { wk: wk, now4: now4, prev4: prev4 };
+  }
   H.stateHead = function () {
-    var m = model(), age = m.newest ? H.daysSince(m.newest) : null;
-    return { n: H.data.needs.length, unit: 'needs', bad: 0, warn: age != null && age > 9 ? 1 : 0, sub: m.newest ? 'newest signal ' + age + 'd old' : 'no signals' };
+    var m = model(), age = m.newest ? H.daysSince(m.newest) : null, w = m.sigs.length ? weekly(m.sigs) : null, dd = w ? w.now4 - w.prev4 : 0;
+    return { n: H.data.needs.length, unit: 'needs', bad: 0, warn: age != null && age > 9 ? 1 : 0, sub: m.newest ? 'newest signal ' + age + 'd old' : 'no signals',
+      side: w ? h('span', { class: 'p-spark', title: 'Market signals per week, last 12 weeks' }, H.spark(w.wk, { k: 'state-signals-weekly', w: 96 }), h('small', null, 'signals / week')) : null,
+      foot: w ? h('span', { class: 'p-delta num' }, h('b', { 'data-k': 'state-signals-4w', 'data-v': w.now4 }, w.now4), ' signals in the last 4 weeks, ',
+        h('span', { 'data-k': 'state-signals-4w-change', 'data-v': dd }, (dd > 0 ? '+' : dd < 0 ? '\u2212' : '\u00b1') + Math.abs(dd)), ' vs the previous 4') : null };
   };
   H.statePanel = function (box) {
     var m = model(), max = Math.max.apply(null, m.items.map(function (i) { return i.needs.length; }).concat([m.loose.length, 1]));
     var feed = m.sigs.filter(function (x) { return x.rival || /round|fund|funding|window|contract/.test(x.s.kind); }).slice(0, 4);
     box.appendChild(h('div', { class: 'pm' },
       h('div', { class: 'pm-col' }, h('h3', { class: 'p-sub' }, m.items.every(function (i) { return i.proposed; }) ? 'Needs behind each item of the plan (unconfirmed)' : 'Needs by roadmap item'),
-        H.data.needs.length || m.items.length ? h('ul', { class: 'hbars' }, m.items.slice(0, 4).map(function (i) { return H.bar(H.clip(i.r.title || 'Untitled', 28), i.needs.length, max, '', i.r.title || ''); }), H.bar('Not in the plan', m.loose.length, max, 'loose'))
+        H.data.needs.length || m.items.length ? h('ul', { class: 'hbars' }, m.items.slice(0, 4).map(function (i) { return H.bar(H.clip(i.r.title || 'Untitled', 28), i.needs.length, max, '', i.r.title || '', { k: 'state-needs-' + i.r.id }); }), H.bar('Not in the plan', m.loose.length, max, 'loose', '', { k: 'state-needs-loose' }))
           : h('p', { class: 'p-empty' }, 'No needs or roadmap yet')),
       h('div', { class: 'pm-col' }, h('h3', { class: 'p-sub' }, 'Standing questions · last evidence'),
         m.qs.length ? h('ul', { class: 'qs' }, m.qs.slice(0, 5).map(function (q) { return h('li', { class: q.fresh ? 'fresh' : '', title: q.text }, h('i', { class: 'qmark', 'aria-hidden': 'true' }), h('span', { class: 'q-t' }, q.text), h('b', { class: 'num' + (q.hits.length ? '' : ' kv') }, q.fresh ? '+' + q.fresh : q.hits.length ? H.fmtDate(q.hits[0].s.date) : 'none yet')); }))

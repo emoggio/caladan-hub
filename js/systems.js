@@ -51,15 +51,40 @@
     return phrase(f) + ': ' + WORD[f.state] + (d.lastSuccess ? ', last success ' + H.agoTime(d.lastSuccess) : ', no success yet') +
       (d.read != null ? ', read ' + d.read + ', changed ' + (d.changed || 0) : '') + (d.tokens ? ', ' + d.tokens + ' tokens' : '') + (d.lastError ? '. ' + H.clip(d.lastError, 160) : '');
   }
-  function lamp(f) {
-    return h('li', { class: 'lamp s-' + f.state, title: tip(f) }, h('i', { class: 'lt', 'aria-hidden': 'true' }), h('span', { class: 'lamp-l' }, f.label),
-      h('span', { class: 'lamp-a num' }, f.state === 'never' ? 'not yet' : f.state === 'skipped' ? 'skip' : f.state === 'failed' ? 'fail' : H.age(f.doc.lastSuccess)), h('span', { class: 'sr' }, WORD[f.state]));
+  /* runs per day for the last 14 days, per feed: from the activity log (by agent) and the status records (by id).
+     by[key][day] = runs that day; by[key]['x' + day] = the last try that day failed; by[key]['s' + day] = it was skipped */
+  H.runDays = function () {
+    var days = H.lastDays(14), by = {};
+    (H.data.activity || []).forEach(function (a) { var k = a.agent || 'other', d = String(a.date || a.createdAt || '').slice(0, 10); (by[k] = by[k] || {})[d] = (by[k][d] || 0) + 1; });
+    (H.data.status || []).forEach(function (s) {
+      var k = s.id, d = String(s.lastSuccess || '').slice(0, 10), f = String(s.lastAttempt || '').slice(0, 10); by[k] = by[k] || {};
+      if (d) by[k][d] = by[k][d] || 1;
+      if (f && /^skipped:/i.test(s.lastError || '')) by[k]['s' + f] = 1; else if (f && s.lastError) by[k]['x' + f] = 1;
+    });
+    return { days: days, by: by };
+  };
+  H.dayResult = function (m, d) { return !m ? 'none' : m['x' + d] ? 'bad' : m[d] ? 'ok' : m['s' + d] ? 'skip' : 'none'; };
+  var DAYWORD = { ok: 'ran', bad: 'failed', skip: 'skipped', none: 'no run recorded' };
+  /* a 14-day strip: one thin bar per day, coloured by what happened that day */
+  function strip(f, runs) {
+    var m = runs.by[f.id];
+    return h('span', { class: 'strip', 'aria-label': f.label + ', last 14 days' }, runs.days.map(function (d) {
+      var r = H.dayResult(m, d);
+      return h('i', { class: 'd-' + r, 'data-tip': H.tipData(H.fmtDate(d), [[f.label, DAYWORD[r]]]) });
+    }));
+  }
+  function lamp(f, runs) {
+    var t = tip(f);   /* on the light and words only, so the day bars keep their own tooltip */
+    return h('li', { class: 'lamp s-' + f.state }, h('i', { class: 'lt', 'aria-hidden': 'true', title: t }), h('span', { class: 'lamp-l', title: t }, f.label),
+      h('span', { class: 'lamp-a num', title: t }, f.state === 'never' ? 'not yet' : f.state === 'skipped' ? 'skip' : f.state === 'failed' ? 'fail' : H.age(f.doc.lastSuccess)), h('span', { class: 'sr' }, WORD[f.state]),
+      runs ? strip(f, runs) : null);
   }
   H.systemsPanel = function (box) {
     /* a slim bar: one sentence and a light per routine; the history and the key are in the drill-in */
     var all = H.systems().filter(function (f) { return !f.extra; }), sum = H.systemSummary(), pend = H.inboxPending().length;
     /* the sentence is already in the header pill; the bar only adds a light per routine */
-    box.appendChild(h('ul', { class: 'lamps' }, all.map(lamp)));
+    var runs = H.runDays();
+    box.appendChild(H.tipBind(h('ul', { class: 'lamps' }, all.map(function (f) { return lamp(f, runs); }))));
     if (pend) box.appendChild(h('b', { class: 'warn-t' }, pend + ' inbox ' + (pend === 1 ? 'note needs' : 'notes need') + ' an answer'));
   };
   /* what ran last: job runs and failures from status/*, plus the jobs' own log lines (activity/*) */

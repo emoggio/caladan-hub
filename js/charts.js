@@ -7,10 +7,11 @@
   var H = window.H, h = H.h;
   var CAPS = [['se', 'Synthetic env'], ['phys', 'Flight physics'], ['ew', 'EW / GPS-denied'], ['cuas', 'Counter-UAS'], ['auto', 'Autonomy data'], ['fpv', 'FPV training'],
     ['bms', 'BMS link'], ['aar', 'Replay'], ['ukr', 'Ukraine data'], ['accr', 'Accreditation'], ['usv', 'Maritime'], ['oem', 'OEM library']];
-  var SEGS = [['fpv-training', 'FPV and operator training', '#e8a33d'], ['synthetic-env', 'Synthetic environments', '#3d9be8'], ['autonomy', 'Autonomy and AI', '#9d7be0'],
-    ['counter-uas', 'Counter-UAS', '#e0609f'], ['oem-drones', 'Drone OEMs', '#3fbf86'], ['maritime', 'Maritime', '#45b8ad'], ['policy', 'Policy and capital', '#8792a3']];
+  /* segment colours are the series tokens; the sixth drawn segment and the not-drawn policy money share --s0 "Other" */
+  var SEGS = [['fpv-training', 'FPV and operator training', 'var(--s1)'], ['synthetic-env', 'Synthetic environments', 'var(--s2)'], ['autonomy', 'Autonomy and AI', 'var(--s3)'],
+    ['counter-uas', 'Counter-UAS', 'var(--s5)'], ['oem-drones', 'Drone OEMs', 'var(--s4)'], ['maritime', 'Maritime', 'var(--s0)'], ['policy', 'Policy and capital', 'var(--s0)']];
   var SEG_ALIAS = { cuas: 'counter-uas', 'synthetic-training': 'synthetic-env', capital: 'policy', funding: 'policy', investors: 'policy' };
-  var STAGES = [[/pre-?seed/i, 'Pre-seed', '#3fbf86'], [/seed/i, 'Seed', '#3d9be8'], [/series a/i, 'Series A', '#8db1f0'], [/series b/i, 'Series B', '#9d7be0'], [/series c/i, 'Series C', '#e0609f'], [/./, 'Later', '#e8a33d']];
+  var STAGES = [[/pre-?seed/i, 'Pre-seed', 'var(--s3)'], [/seed/i, 'Seed', 'var(--s1)'], [/series a/i, 'Series A', 'var(--s4)'], [/series b/i, 'Series B', 'var(--s5)'], [/series c/i, 'Series C', 'var(--s2)'], [/./, 'Later', 'var(--s0)']];
   H.CAPS = CAPS;
   function seg(s) { var k = SEG_ALIAS[s] || s; return SEGS.some(function (x) { return x[0] === k; }) ? k : 'policy'; }
   function stage(s) { for (var i = 0; i < STAGES.length; i++) if (STAGES[i][0].test(s || '')) return STAGES[i]; return STAGES[5]; }
@@ -18,11 +19,18 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   H.usd = usd;
   /* an SVG chart from a string; clicking an element with data-go opens that record */
-  function svg(W, Hh, inner, label) {
+  function svg(W, Hh, inner, label, onHover) {
     var d = document.createElement('div'); d.className = 'chart';
     d.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + Hh + '" role="img" aria-label="' + esc(label) + '">' + inner + '</svg>';
     d.addEventListener('click', function (ev) { var g = ev.target.closest('[data-go]'); if (g && g.getAttribute('data-go') && H.data.nodes.has(g.getAttribute('data-go'))) H.mapSelect(g.getAttribute('data-go')); });
-    return d;
+    return H.tipBind(d, onHover);
+  }
+  var tip = H.tipAttr;
+  /* a bar segment with only its top corners rounded */
+  function roundTop(x, y, w, hh, r) {
+    r = Math.max(0, Math.min(r, w / 2, hh));
+    return 'M' + x.toFixed(1) + ' ' + (y + hh).toFixed(1) + 'V' + (y + r).toFixed(1) + 'Q' + x.toFixed(1) + ' ' + y.toFixed(1) + ' ' + (x + r).toFixed(1) + ' ' + y.toFixed(1) +
+      'H' + (x + w - r).toFixed(1) + 'Q' + (x + w).toFixed(1) + ' ' + y.toFixed(1) + ' ' + (x + w).toFixed(1) + ' ' + (y + r).toFixed(1) + 'V' + (y + hh).toFixed(1) + 'Z';
   }
   function legend(items) { return h('div', { class: 'ch-legend' }, items.map(function (x) { return h('span', null, h('i', { style: 'background:' + x[1] }), x[0]); })); }
   /* greedy label placement: try a few spots, skip one that would collide */
@@ -43,6 +51,8 @@
 
   /* ---------- Market ---------- */
   function quarter(d) { var t = H.parse(d); return t ? t.getFullYear() + ' Q' + (Math.floor(t.getMonth() / 3) + 1) : null; }
+  var moneyFocus = '';
+  function segName(sg) { return sg[0] === 'maritime' ? 'Other (maritime)' : sg[1]; }   /* the segment a legend click isolates; kept across redraws */
   H.chartMoney = function () {
     /* budgets and fund closes are a different scale (billions); they are counted in the note, not drawn */
     var q = {}, aside = 0; H.data.signals.forEach(function (s) {
@@ -53,20 +63,37 @@
     });
     var ks = Object.keys(q).sort().slice(-8);
     if (!ks.length) return section('Money raised and won, by quarter', '', h('p', { class: 'p-empty' }, 'No rounds or contracts with an amount yet'));
+    var drawn = SEGS.slice(0, 6).filter(function (sg) { return ks.some(function (k) { return q[k][sg[0]]; }); });
+    if (moneyFocus && !drawn.some(function (sg) { return sg[0] === moneyFocus; })) moneyFocus = '';
     var tot = ks.map(function (k) { return Object.keys(q[k]).reduce(function (a, s) { return a + q[k][s]; }, 0); }), max = Math.max.apply(null, tot);
-    var W = 760, Hh = 240, P = 34, slot = (W - 2 * P) / ks.length, bw = Math.min(56, slot - 16), out = '';
-    [0.5, 1].forEach(function (f) { var y = Hh - P - f * (Hh - 2 * P - 14); out += '<line x1="' + P + '" x2="' + (W - P) + '" y1="' + y + '" y2="' + y + '" class="ch-grid"/><text x="' + (P - 6) + '" y="' + (y + 4) + '" class="ch-ax" text-anchor="end">' + usd(max * f) + '</text>'; });
+    var W = 760, Hh = 240, P = 34, ph = Hh - 2 * P - 14, slot = (W - 2 * P) / ks.length, bw = Math.min(56, slot - 16), out = '';
+    [0.5, 1].forEach(function (f) { var y = Hh - P - f * ph; out += '<line x1="' + P + '" x2="' + (W - P) + '" y1="' + y + '" y2="' + y + '" class="ch-grid"/><text x="' + (P - 6) + '" y="' + (y + 4) + '" class="ch-ax" text-anchor="end">' + usd(max * f) + '</text>'; });
     ks.forEach(function (k, i) {
-      var x = P + i * slot + (slot - bw) / 2, y = Hh - P;
-      SEGS.forEach(function (sg) {
-        var v = q[k][sg[0]] || 0; if (!v) return; var hh = v / max * (Hh - 2 * P - 14);
-        out += '<rect x="' + x.toFixed(1) + '" y="' + (y - hh).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(1, hh).toFixed(1) + '" fill="' + sg[2] + '"><title>' + esc(k + ' · ' + sg[1] + ': ' + usd(v)) + '</title></rect>'; y -= hh;
+      var x = P + i * slot + (slot - bw) / 2, y = Hh - P, segs = drawn.filter(function (sg) { return q[k][sg[0]]; }), kk = k.replace(' ', ''), body = '';
+      segs.forEach(function (sg, j) {
+        var v = q[k][sg[0]], hh = v / max * ph, top = j === segs.length - 1, gap = top ? 0 : Math.min(2, hh / 2), y0 = y - hh;
+        var attrs = ' style="fill:' + sg[2] + '" data-seg="' + sg[0] + '" data-k="money-' + kk + '-' + sg[0] + '" data-v="' + v + '"';
+        body += top ? '<path d="' + roundTop(x, y0, bw, Math.max(1, hh), 4) + '"' + attrs + '/>' : '<rect x="' + x.toFixed(1) + '" y="' + (y0 + gap).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(1, hh - gap).toFixed(1) + '"' + attrs + '/>';
+        y = y0;
       });
-      out += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (Hh - P + 16) + '" class="ch-ax" text-anchor="middle">' + k + '</text><text x="' + (x + bw / 2).toFixed(1) + '" y="' + (y - 5).toFixed(1) + '" class="ch-v" text-anchor="middle">' + usd(tot[i]) + '</text>';
+      var rows = segs.slice().reverse().map(function (sg) { return [segName(sg), usd(q[k][sg[0]]), sg[2]]; }).concat([['Total', usd(tot[i])]]);
+      /* the whole column is the hover target: a rounded light background behind it and one tooltip with every segment */
+      out += '<g class="ch-col"' + tip(k, rows) + '><rect class="ch-hi" x="' + (P + i * slot + 4).toFixed(1) + '" y="' + (P - 6) + '" width="' + (slot - 8).toFixed(1) + '" height="' + (Hh - 2 * P + 6) + '" rx="10"/>' +
+        '<g class="ch-stack" data-k="money-' + kk + '-stack" data-v="' + tot[i] + '">' + body + '</g></g>';
+      out += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (Hh - P + 16) + '" class="ch-ax" text-anchor="middle">' + k + '</text><text x="' + (x + bw / 2).toFixed(1) + '" y="' + (y - 5).toFixed(1) + '" class="ch-v" text-anchor="middle" data-k="money-' + kk + '-total" data-v="' + tot[i] + '">' + usd(tot[i]) + '</text>';
     });
     out += '<line x1="' + P + '" x2="' + (W - P) + '" y1="' + (Hh - P) + '" y2="' + (Hh - P) + '" class="ch-axis"/>';
-    return section('Money raised and won, by quarter', 'Rounds and contracts in our segments that state an amount. Hover a block for the figure.' + (aside ? ' Not drawn: ' + usd(aside) + ' of budgets and fund closes in the last two years.' : ''),
-      [svg(W, Hh, out, 'Money by quarter and segment'), legend(SEGS.slice(0, 6).map(function (s) { return [s[1], s[2]]; }))]);
+    var chart = svg(W, Hh, out, 'Money by quarter and segment');
+    function apply() {
+      chart.querySelectorAll('[data-seg]').forEach(function (el) { el.style.opacity = moneyFocus && el.getAttribute('data-seg') !== moneyFocus ? '.3' : ''; });
+      leg.querySelectorAll('button').forEach(function (b) { var on = b.getAttribute('data-seg'); b.setAttribute('aria-pressed', String(moneyFocus === on)); b.classList.toggle('off', !!moneyFocus && moneyFocus !== on); });
+    }
+    var leg = h('div', { class: 'ch-legend', role: 'group', 'aria-label': 'Show one segment' }, drawn.map(function (sg) {
+      return h('button', { type: 'button', 'data-seg': sg[0], 'aria-pressed': 'false', onclick: function () { moneyFocus = moneyFocus === sg[0] ? '' : sg[0]; apply(); } }, h('i', { style: 'background:' + sg[2] }), segName(sg));
+    }));
+    apply();
+    return section('Money raised and won, by quarter', 'Rounds and contracts in our segments that state an amount. Hover a quarter for the breakdown; click a segment in the key to pick it out.' + (aside ? ' Not drawn: ' + usd(aside) + ' of budgets and fund closes in the last two years.' : ''),
+      [chart, leg]);
   };
   H.chartHeat = function () {
     var now = Date.now(), rows = SEGS.map(function (sg) {
@@ -80,8 +107,8 @@
       h('ul', { class: 'heat' }, rows.map(function (r) {
         var d = r.n - r.prev;
         return h('li', null, h('span', { class: 'hb-l' }, h('i', { class: 'dot', style: 'background:' + r.sg[2] }), r.sg[1]),
-          h('span', { class: 'heat-t' }, h('i', { style: 'width:' + (r.n / max * 100) + '%;background:' + r.sg[2] }), h('em', { style: 'left:' + (r.prev / max * 100) + '%' })),
-          h('b', { class: 'num' }, r.n), h('span', { class: 'num heat-d ' + (d > 0 ? 'up' : d < 0 ? 'down' : '') }, d > 0 ? '+' + d : d < 0 ? String(d) : '='), h('span', { class: 'num kv' }, r.cap ? usd(r.cap) : ''));
+          h('span', { class: 'heat-t' }, h('i', { style: 'width:' + (r.n / max * 100) + '%;background:' + r.sg[2], 'data-k': 'heat-' + r.sg[0] + '-bar', 'data-v': r.n }), h('em', { style: 'left:' + (r.prev / max * 100) + '%', title: r.prev + ' in the 90 days before' })),
+          h('b', { class: 'num', 'data-k': 'heat-' + r.sg[0], 'data-v': r.n }, r.n), h('span', { class: 'num heat-d ' + (d > 0 ? 'up' : d < 0 ? 'down' : '') }, d > 0 ? '+' + d : d < 0 ? String(d) : '='), h('span', { class: 'num kv' }, r.cap ? usd(r.cap) : ''));
       })));
   };
 
@@ -103,16 +130,16 @@
     var out = '', put = placer(W, Hh);
     [1e6, 1e7, 1e8, 1e9].forEach(function (v) { if (Math.log10(v) > hi) return; var y = sy(v); out += '<line x1="' + P + '" x2="' + (W - P) + '" y1="' + y + '" y2="' + y + '" class="ch-grid"/><text x="' + (P - 6) + '" y="' + (y + 4) + '" class="ch-ax" text-anchor="end">' + usd(v) + '</text>'; });
     [0.25, 0.5, 0.75].forEach(function (v) { var x = sx(v); out += '<line x1="' + x + '" x2="' + x + '" y1="' + P + '" y2="' + (Hh - P) + '" class="ch-grid"/><text x="' + x + '" y="' + (Hh - P + 26) + '" class="ch-ax" text-anchor="middle">' + v * 100 + '%</text>'; });
-    out += '<rect x="' + sx(0.5) + '" y="' + P + '" width="' + (sx(1) - sx(0.5)) + '" height="' + (sy(3e7) - P) + '" class="ch-zone"><title>Close overlap and well funded</title></rect>';
+    out += '<rect x="' + sx(0.5) + '" y="' + P + '" width="' + (sx(1) - sx(0.5)) + '" height="' + (sy(3e7) - P) + '" class="ch-zone"' + tip('Close overlap and well funded', [['Overlap', 'over 50%'], ['Raised', 'over ' + usd(3e7)]]) + '/>';
     /* rivals with no funding recorded sit in their own strip at the bottom, staggered so they do not stack */
     var k = 0, pts = list.map(function (r) { return { r: r, x: sx(r.ov), y: r.fund ? sy(r.fund) : Hh - P - 8 - (k++ % 3) * 16, rad: r.fund ? Math.min(14, 4 + Math.sqrt(r.fund / 1e6) * 0.9) : 4.5 }; }).sort(function (a, b) { return b.rad - a.rad; });
     out += '<line x1="' + P + '" x2="' + (W - P) + '" y1="' + (Hh - P - lane + 6) + '" y2="' + (Hh - P - lane + 6) + '" class="ch-axis"/><text x="' + (P - 6) + '" y="' + (Hh - P - 20) + '" class="ch-ax" text-anchor="end">not</text><text x="' + (P - 6) + '" y="' + (Hh - P - 8) + '" class="ch-ax" text-anchor="end">recorded</text>';
     pts.forEach(function (p) {
-      out += '<g data-go="' + esc(p.r.n.id) + '" class="ch-pt"><circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + p.rad.toFixed(1) + '" class="' + (p.r.fund ? '' : 'nofund') + '"><title>' + esc(p.r.n.name + ' · overlap ' + Math.round(p.r.ov * 100) + '% · ' + (p.r.fund ? 'raised ' + usd(p.r.fund) : 'funding not recorded')) + '</title></circle></g>';
+      out += '<g data-go="' + esc(p.r.n.id) + '" class="ch-pt"' + tip(H.shortName(p.r.n.name), [['Overlap', Math.round(p.r.ov * 100) + '%', 'var(--s1)'], ['Raised', p.r.fund ? usd(p.r.fund) : 'not recorded']]) + '><circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + p.rad.toFixed(1) + '" class="' + (p.r.fund ? '' : 'nofund') + '"/></g>';
     });
     pts.forEach(function (p) { out += put(p.x, p.y, p.rad, H.shortName(p.r.n.name).split(' (')[0].slice(0, 22)); });
     out += '<text x="' + (W - P) + '" y="' + (Hh - 10) + '" class="ch-axl" text-anchor="end">capability overlap with Caladan →</text><text x="' + P + '" y="' + (P - 14) + '" class="ch-axl">↑ money raised (log)</text>';
-    return section('Who overlaps with us, and how much money they have', 'Top right is the threat: close to what we do and well funded. Hollow dots: funding not recorded. Click a dot to open it.', svg(W, Hh, out, 'Rivals by overlap and funding'));
+    return section('Who overlaps with us, and how much money they have', 'Top right is the threat: close to what we do and well funded. Hollow dots: funding not recorded. Hover a dot for the figures; click it to open it.', svg(W, Hh, out, 'Rivals by overlap and funding'));
   };
   H.chartCaps = function () {
     var me = us(), list = H.rivals().slice(0, 14);
@@ -138,14 +165,15 @@
     if (!list.length) return section('Companies like us', '', h('p', { class: 'p-empty' }, 'No comparable rounds marked yet'));
     var max = Math.max.apply(null, list.map(function (r) { return r.total; }).concat([1]));
     return section('Companies like us: what they raised, round by round', 'Each block is one round, coloured by stage. Our ask is in the brand colour.',
-      [h('ul', { class: 'likebars' }, list.map(function (r) {
+      [H.tipBind(h('ul', { class: 'likebars' }, list.map(function (r) {
         return h('li', { class: r.us ? 'us' : '' }, h('span', { class: 'lb-name' }, r.vs[0].node && H.data.nodes.has(r.vs[0].node) ? H.nodeLink(r.vs[0].node, r.co) : r.co),
           h('span', { class: 'lb-bar' }, r.vs.filter(function (v) { return v.amountUSD; }).map(function (v) {
             var w = v.amountUSD / max * 100, st = stage(v.stage);
-            return h('i', { style: 'width:' + w.toFixed(2) + '%;background:' + (r.us ? 'var(--brand-grad)' : st[2]), title: v.stage + ' · ' + String(v.date || '').slice(0, 7) + ' · ' + usd(v.amountUSD) + (v.lead ? ' · ' + v.lead : '') }, w > 7 ? usd(v.amountUSD) : '');
+            return h('i', { style: 'width:' + w.toFixed(2) + '%;background:' + (r.us ? 'var(--brand-grad)' : st[2]), 'data-tip': H.tipData(r.co, [['Stage', v.stage || 'not recorded', r.us ? null : st[2]], ['Date', H.fmtDate(String(v.date || '').slice(0, 7)) || 'not recorded'], ['Raised', usd(v.amountUSD)]].concat(v.lead ? [['Lead', v.lead]] : [])),
+              'data-k': 'likeus-' + H.norm(r.co).replace(/[^a-z0-9]+/g, '-') + '-' + H.norm(v.stage || '').replace(/[^a-z0-9]+/g, '-') + '-' + String(v.date || '').slice(0, 7), 'data-v': v.amountUSD }, w > 7 ? usd(v.amountUSD) : '');
           })),
           h('b', { class: 'num' }, r.total ? usd(r.total) : 'undisclosed'), h('span', { class: 'kv' }, r.vs.map(function (v) { return stage(v.stage)[1] + ' ' + String(v.date || '').slice(0, 7); }).join(' → ')));
-      })), legend(STAGES.map(function (s) { return [s[1], s[2]]; }))]);
+      }))), legend(STAGES.map(function (s) { return [s[1], s[2]]; }))]);
   };
   H.chartValuations = function () {
     var rows = (H.data.valuations || []).filter(function (v) { return v.valuationUSD && H.parse(v.date); });
@@ -159,51 +187,74 @@
     for (var e = lo; e <= hi; e++) { var y = sy(Math.pow(10, e)); out += '<line x1="' + P + '" x2="' + (W - P) + '" y1="' + y + '" y2="' + y + '" class="ch-grid"/><text x="' + (P - 6) + '" y="' + (y + 4) + '" class="ch-ax" text-anchor="end">' + usd(Math.pow(10, e)) + '</text>'; }
     for (var yr = new Date(t0).getFullYear(); yr <= new Date().getFullYear(); yr++) { var x = sx(yr + '-01-01'); out += '<line x1="' + x + '" x2="' + x + '" y1="' + P + '" y2="' + (Hh - P) + '" class="ch-grid"/><text x="' + x + '" y="' + (Hh - P + 16) + '" class="ch-ax" text-anchor="middle">' + yr + '</text>'; }
     rows.forEach(function (v) { (by[v.company] = by[v.company] || []).push(v); });
-    Object.keys(by).forEach(function (k) { var vs = by[k].sort(function (a, b) { return a.date < b.date ? -1 : 1; }); if (vs.length > 1) out += '<polyline class="ch-line" points="' + vs.map(function (v) { return sx(v.date).toFixed(1) + ',' + sy(v.valuationUSD).toFixed(1); }).join(' ') + '"/>'; });
+    Object.keys(by).forEach(function (k) { var vs = by[k].sort(function (a, b) { return a.date < b.date ? -1 : 1; }); if (vs.length > 1) out += '<polyline class="ch-line" data-co="' + esc(k) + '" points="' + vs.map(function (v) { return sx(v.date).toFixed(1) + ',' + sy(v.valuationUSD).toFixed(1); }).join(' ') + '"/>'; });
     var pts = rows.map(function (v) { return { v: v, x: sx(v.date), y: sy(v.valuationUSD), r: v.amountUSD ? Math.min(11, 4 + Math.sqrt(v.amountUSD / 1e6) * 0.25) : 5 }; });
-    pts.forEach(function (p) { var st = stage(p.v.stage); out += '<g data-go="' + esc(p.v.node || '') + '" class="ch-pt"><circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + p.r.toFixed(1) + '" style="fill:' + st[2] + '"><title>' + esc(p.v.company + ' · ' + p.v.stage + ' · ' + p.v.date + ' · ' + (p.v.amountUSD ? usd(p.v.amountUSD) + ' at ' : '') + usd(p.v.valuationUSD)) + '</title></circle></g>'; });
+    pts.forEach(function (p) {
+      var st = stage(p.v.stage), rows = [['Stage', p.v.stage || st[1], st[2]], ['Date', H.fmtDate(p.v.date)], ['Raised', p.v.amountUSD ? usd(p.v.amountUSD) : 'not recorded'], ['Valuation', usd(p.v.valuationUSD)]];
+      out += '<g data-go="' + esc(p.v.node || '') + '" data-co="' + esc(p.v.company) + '" class="ch-pt"' + tip(p.v.company, rows) + '><circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + p.r.toFixed(1) + '" style="fill:' + st[2] + '"/></g>';
+    });
     pts.sort(function (a, b) { return b.v.valuationUSD - a.v.valuationUSD; }).forEach(function (p) { out += put(p.x, p.y, p.r, String(p.v.company).split(' ')[0]); });
     out += '<text x="' + P + '" y="' + (P - 14) + '" class="ch-axl">↑ valuation after the round (log)</text>';
-    return section('Valuations over time', 'Each dot is a priced round; lines join the same company. Size is the amount raised.', [svg(W, Hh, out, 'Valuations over time'), legend(STAGES.map(function (s) { return [s[1], s[2]]; }))]);
+    return section('Valuations over time', 'Each dot is a priced round; lines join the same company. Size is the amount raised. Hover a dot for the figures.', [svg(W, Hh, out, 'Valuations over time', function (el) {
+      /* the hovered company's own line comes forward */
+      var co = el && el.getAttribute('data-co'), box = el && el.ownerSVGElement;
+      document.querySelectorAll('.ch-line.on').forEach(function (l) { l.classList.remove('on'); });
+      if (co && box) box.querySelectorAll('.ch-line').forEach(function (l) { if (l.getAttribute('data-co') === co) l.classList.add('on'); });
+    }), legend(STAGES.map(function (s) { return [s[1], s[2]]; }))]);
   };
 
   /* ---------- small charts for the other drill-ins ---------- */
-  /* due steps: one row per owner, segments by age */
+  /* due steps: one row per owner, segments by age (the same four ages and colours as the wall's bar) */
   H.chartDue = function (steps) {
-    var AGES = [['due today', 0, 0, 'var(--s1)'], ['1–7 days late', 1, 7, 'var(--s0)'], ['8–30 days late', 8, 30, 'var(--warn)'], ['over 30 days late', 31, 1e9, 'var(--bad)']];
+    var AGES = [['today', 'Due today', 0, 0], ['week', '1-7 days late', 1, 7], ['month', '8-30 days late', 8, 30], ['old', 'Over 30 days late', 31, 1e9]];
     var OWN = [['eugenio', 'Eugenio'], ['alex', 'Alex'], ['both', 'Both'], ['unassigned', 'No owner']];
-    var rows = OWN.map(function (o) { var mine = steps.filter(function (c) { return c.owner === o[0]; }); return { o: o, n: mine.length, seg: AGES.map(function (a) { return mine.filter(function (c) { return (c.late || 0) >= a[1] && (c.late || 0) <= a[2]; }).length; }) }; }).filter(function (r) { return r.n; });
+    var rows = OWN.map(function (o) { var mine = steps.filter(function (c) { return c.owner === o[0]; }); return { o: o, n: mine.length, seg: AGES.map(function (a) { return mine.filter(function (c) { return (c.late || 0) >= a[2] && (c.late || 0) <= a[3]; }).length; }) }; }).filter(function (r) { return r.n; });
     var max = Math.max.apply(null, rows.map(function (r) { return r.n; }).concat([1]));
-    return h('div', { class: 'ch-block' }, h('ul', { class: 'stackbars' }, rows.map(function (r) {
-      return h('li', null, h('span', { class: 'hb-l' }, r.o[1]), h('span', { class: 'sb-t' }, r.seg.map(function (n, i) { return n ? h('i', { style: 'width:' + (n / max * 100) + '%;background:' + AGES[i][3], title: r.o[1] + ': ' + n + ' ' + AGES[i][0] }, n) : null; })), h('b', { class: 'num' }, r.n));
-    })), legend(AGES.map(function (a) { return [a[0], a[3]]; })));
+    return h('div', { class: 'ch-block' }, H.tipBind(h('ul', { class: 'stackbars' }, rows.map(function (r) {
+      var tipRows = AGES.map(function (a, i) { return [a[1], r.seg[i], 'var(--age-' + a[0] + ')']; }).filter(function (x) { return x[1]; });
+      /* the row's fill carries the whole count, so it can be scaled from the left; segments share it by count */
+      return h('li', null, h('span', { class: 'hb-l' }, r.o[1]),
+        h('span', { class: 'sb-t' }, h('span', { class: 'sb-f', style: 'width:' + (r.n / max * 100).toFixed(2) + '%', 'data-k': 'due-' + r.o[0] + '-bar', 'data-v': r.n, 'data-tip': H.tipData(r.o[1] + ': ' + r.n + ' due', tipRows) },
+          r.seg.map(function (n, i) { return n ? h('i', { class: 'a-' + AGES[i][0], style: 'flex:' + n + ' 1 0', 'data-k': 'due-' + r.o[0] + '-' + AGES[i][0], 'data-v': n }, n) : null; }))),
+        h('b', { class: 'num', 'data-k': 'due-' + r.o[0], 'data-v': r.n }, r.n));
+    }))), legend(AGES.map(function (a) { return [a[1], 'var(--age-' + a[0] + ')']; })));
   };
-  /* feeds: a dot per day for the last 14 days, from the activity log and the status records */
+  /* feeds: a bar per day for the last 14 days, from the activity log and the status records */
+  var DAYWORD = { ok: 'ran', bad: 'failed', skip: 'skipped', none: 'nothing recorded' };
   H.chartRuns = function () {
-    var days = [], today = H.parse(H.todayISO());
-    for (var i = 13; i >= 0; i--) { var d = new Date(today.getTime() - i * 864e5); days.push(d.toISOString().slice(0, 10)); }
-    var by = {};
-    (H.data.activity || []).forEach(function (a) { var k = a.agent || 'other', d = String(a.date || a.createdAt || '').slice(0, 10); (by[k] = by[k] || {})[d] = (by[k][d] || 0) + 1; });
-    (H.data.status || []).forEach(function (s) { var k = s.id, d = String(s.lastSuccess || '').slice(0, 10), f = String(s.lastAttempt || '').slice(0, 10); by[k] = by[k] || {}; if (d) by[k][d] = by[k][d] || 1; if (f && s.lastError) by[k]['x' + f] = 1; });
-    var keys = Object.keys(by).sort();
+    var R = H.runDays(), days = R.days, by = R.by, keys = Object.keys(by).sort();
     if (!keys.length) return null;
     return h('div', { class: 'ch-block' }, h('h3', { class: 'eyebrow' }, 'Runs, last 14 days'),
-      h('div', { class: 'runs', style: 'grid-template-columns: 150px repeat(14, 1fr)' }, h('span', null, ''), days.map(function (d) { return h('span', { class: 'runs-d' }, d.slice(8)); }),
-        keys.map(function (k) { return [h('span', { class: 'runs-k' }, k.replace(/_/g, ' '))].concat(days.map(function (d) { var bad = by[k]['x' + d], n = by[k][d]; return h('i', { class: bad ? 'bad' : n ? 'ok' : '', title: k + ' · ' + d + (bad ? ' · failed' : n ? ' · ran' : '') }); })); })),
-      legend([['ran', 'var(--good)'], ['failed', 'var(--bad)'], ['nothing', 'var(--tint)']]));
+      H.tipBind(h('div', { class: 'runs', style: 'grid-template-columns: minmax(90px, 150px) repeat(14, minmax(0, 1fr))' }, h('span', null, ''), days.map(function (d, i) { return h('span', { class: 'runs-d num' + (i % 2 ? '' : ' alt') }, d.slice(8)); }),
+        keys.map(function (k) { var name = H.cap(k.replace(/_/g, ' ')); return [h('span', { class: 'runs-k' }, name)].concat(days.map(function (d) { var r = H.dayResult(by[k], d), n = by[k][d];
+          return h('i', { class: 'd-' + r, 'data-tip': H.tipData(H.fmtDate(d), [[name, DAYWORD[r] + (r === 'ok' && n > 1 ? ' (' + n + ' entries)' : '')]]) }); })); }))),
+      legend([['Ran', 'var(--good)'], ['Skipped', 'var(--warn)'], ['Failed', 'var(--bad)'], ['Nothing recorded', 'var(--tint)']]));
   };
-  /* goals: from when it was set to its deadline, with today marked and the share done */
+  /* goals: from when it was set to its deadline, one today line across all of them, month ticks along the top,
+     and a dot at each deadline */
   H.chartGoals = function (goals) {
     var today = Date.now(), list = goals.filter(function (g) { return H.parse(g.by); });
     if (!list.length) return null;
     var t0 = Math.min.apply(null, list.map(function (g) { return (H.parse(g.createdAt) || H.parse(g.by)).getTime(); }).concat([today - 30 * 864e5])), t1 = Math.max.apply(null, list.map(function (g) { return H.parse(g.by).getTime(); }).concat([today + 14 * 864e5]));
     function x(t) { return ((t - t0) / (t1 - t0) * 100).toFixed(2) + '%'; }
-    return h('div', { class: 'ch-block' }, h('ul', { class: 'gtrack' }, list.map(function (g) {
+    /* month starts inside the range; every other one when there are many */
+    var months = [], m = new Date(t0); m = new Date(m.getFullYear(), m.getMonth() + 1, 1);
+    for (; m.getTime() <= t1; m = new Date(m.getFullYear(), m.getMonth() + 1, 1)) months.push(new Date(m));
+    var step = months.length > 8 ? 2 : 1, MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    var axis = h('div', { class: 'gt-axis', 'aria-hidden': 'true' }, months.filter(function (d, i) { return i % step === 0; }).map(function (d) {
+      return h('span', { class: 'gt-m', style: 'left:' + x(d.getTime()) }, MON[d.getMonth()] + (d.getMonth() === 0 ? ' ' + d.getFullYear() : ''));
+    }), h('span', { class: 'gt-today', style: 'left:' + x(today) }, 'Today'));
+    var rows = [];
+    list.forEach(function (g, i) {
+      var row = 'grid-row:' + (i + 2) + ';', gl = H.goalById && H.goalById(g.id), name = gl ? 'G' + gl.no + ' ' + gl.title : 'G' + (g.n || '') + ' ' + H.clip(g.title || g.short || g.text || '', 40);
       var done = g.status === 'done', s = (H.parse(g.createdAt) || new Date(t0)).getTime(), e = H.parse(g.by).getTime(), late = !done && today > e, pct = done ? 1 : g.target && typeof g.current === 'number' ? Math.min(1, g.current / g.target) : null;
-      return h('li', null, h('span', { class: 'hb-l' }, 'G' + (g.n || '') + ' ' + H.clip(g.title || g.short || g.text || '', 40)),
-        h('span', { class: 'gt-t' }, h('i', { class: 'gt-span' + (late ? ' late' : '') + (done ? ' done' : ''), style: 'left:' + x(s) + ';width:calc(' + x(e) + ' - ' + x(s) + ')' }, pct != null ? h('b', { style: 'width:' + (pct * 100) + '%' }) : null),
-          h('em', { class: 'gt-now', style: 'left:' + x(today) }, 'today')),
-        h('b', { class: 'num ' + (late ? 'late' : '') }, done ? 'done' : pct == null ? 'not recorded' : Math.round(pct * 100) + '%'));
-    })));
+      rows.push(h('span', { class: 'hb-l', style: row + 'grid-column:1', title: name }, name),
+        h('span', { class: 'gt-t', style: row + 'grid-column:2' }, h('i', { class: 'gt-span' + (late ? ' late' : '') + (done ? ' done' : ''), style: 'left:' + x(s) + ';width:calc(' + x(e) + ' - ' + x(s) + ')' },
+          pct != null ? h('b', { style: 'width:' + (pct * 100) + '%', 'data-k': 'goal-tl-' + g.id + '-bar', 'data-v': Math.round(pct * 100) }) : null),
+          h('em', { class: 'gt-end' + (late ? ' late' : ''), style: 'left:' + x(e), 'data-tip': H.tipData(name, [['Due', H.fmtDate(String(g.by).slice(0, 10))], ['Set', g.createdAt ? H.fmtDate(String(g.createdAt).slice(0, 10)) : 'not recorded']]) })),
+        h('b', { class: 'num ' + (late ? 'late' : ''), style: row + 'grid-column:3', 'data-k': 'goal-tl-' + g.id, 'data-v': pct == null ? null : Math.round(pct * 100) }, done ? 'Done' : pct == null ? 'Not recorded' : Math.round(pct * 100) + '%'));
+    });
+    return h('div', { class: 'ch-block' }, H.tipBind(h('div', { class: 'gtl' }, h('span', null), axis, h('span', null), rows,
+      h('span', { class: 'gt-now', style: 'grid-row: 2 / span ' + list.length, 'aria-hidden': 'true' }, h('i', { style: 'left:' + x(today) })))));
   };
 })();

@@ -6,6 +6,9 @@
   try { S.three = localStorage.getItem('hub-map-3d') === '1'; } catch (e) { /* storage blocked: start in 2D */ }
   function set3d(on) { S.three = on; try { localStorage.setItem('hub-map-3d', on ? '1' : '0'); } catch (e) { /* not remembered */ } H.render(); }
   var L = null, key = '', el = {}, routes = null, hi = {}, hover = null, raf = 0, fitK = 1, links = [], net = [];
+  /* motion: what the previous full-screen 2D draw showed, so a programmatic move (Reset, a lens, a pick, a route) glides
+     there instead of jumping. Wheel, pan and pinch stay direct. */
+  var shown = null, mapTick = -1, tw = 0, lastHi = null, overAt = null;   /* overAt: the view the labels were laid out for */
 
   function s(tag, attrs, text) {
     var e = document.createElementNS(NS, tag);
@@ -67,14 +70,48 @@
       : Math.max(fitK, Math.min(base.k * 2.4, (z.w - 150) / (x1 - x0 + 1), (z.h - 110) / (y1 - y0 + 1)));
     S.view = { k: k, x: z.w / 2 - k * (x0 + x1) / 2, y: z.h / 2 - k * (y0 + y1) / 2 };
   }
-  function apply() {
+  function apply(now) {
     el.world.setAttribute('transform', 'translate(' + S.view.x + ',' + S.view.y + ') scale(' + S.view.k + ')');
     el.world.style.setProperty('--cap', Math.min(11 / S.view.k, 19) + 'px');   /* ring captions stay about 11px on screen */
-    if (!raf) raf = requestAnimationFrame(function () { raf = 0; overlay(); });
+    shown = S.small ? null : { x: S.view.x, y: S.view.y, k: S.view.k };
+    /* mid-glide the label layout is too costly to redo every frame: the labels laid out at the start ride along with the
+       map (scaled with it) and are laid out again on the last frame */
+    if (now === 'glide' && overAt) { var f = S.view.k / overAt.k; el.over.setAttribute('transform', 'translate(' + (S.view.x - overAt.x * f) + ',' + (S.view.y - overAt.y * f) + ') scale(' + f + ')'); }
+    else if (now) { if (raf) { cancelAnimationFrame(raf); raf = 0; } overlay(); }
+    else if (!raf) raf = requestAnimationFrame(function () { raf = 0; overlay(); });
   }
   function zoomAt(mx, my, f) {
     var v = S.view, k = Math.max(fitK * 0.8, Math.min(fitK * 14, v.k * f));
     v.x = mx - (mx - v.x) * k / v.k; v.y = my - (my - v.y) * k / v.k; v.k = k; apply();
+  }
+  function stopTween() { if (tw) { cancelAnimationFrame(tw); tw = 0; } }
+  /* glide from the view on screen to `to` over --d3: the point at the centre moves in a straight line, the zoom moves on
+     a log scale so zooming in and out feel the same speed. Reduced motion, or nothing to move: jump. */
+  function tweenTo(to) {
+    stopTween();
+    var from = S.view, z = size(), d = H.dur(3);
+    if (!from || H.calm.matches || !(z.w > 0) || (Math.abs(from.k / to.k - 1) < 0.002 && Math.abs(from.x - to.x) + Math.abs(from.y - to.y) < 1)) { S.view = to; apply(); return; }
+    var c0 = { x: (z.w / 2 - from.x) / from.k, y: (z.h / 2 - from.y) / from.k }, c1 = { x: (z.w / 2 - to.x) / to.k, y: (z.h / 2 - to.y) / to.k };
+    var lk0 = Math.log(from.k), lk1 = Math.log(to.k), v = S.view = { x: from.x, y: from.y, k: from.k }, world = el.world, t0 = performance.now();
+    apply(true);
+    function step(now) {
+      tw = 0;
+      if (!world.isConnected || S.view !== v) return;   /* redrawn or taken over by the hand: stop where it is */
+      var p = Math.min(1, (now - t0) / d), e = H.ease(p);
+      if (p >= 1) { v.x = to.x; v.y = to.y; v.k = to.k; }
+      else {
+        var cx = c0.x + (c1.x - c0.x) * e, cy = c0.y + (c1.y - c0.y) * e;
+        v.k = Math.exp(lk0 + (lk1 - lk0) * e); v.x = z.w / 2 - v.k * cx; v.y = z.h / 2 - v.k * cy;
+      }
+      apply(p < 1 ? 'glide' : true);
+      if (p < 1) tw = requestAnimationFrame(step);
+    }
+    tw = requestAnimationFrame(step);
+  }
+  /* the zoom buttons glide too; the wheel and pinch do not */
+  function zoomBy(f) {
+    var z = size(), v = S.view, k = Math.max(fitK * 0.8, Math.min(fitK * 14, v.k * f)), mx = z.w / 2, my = z.h / 2;
+    tweenTo({ x: mx - (mx - v.x) * k / v.k, y: my - (my - v.y) * k / v.k, k: k });
   }
   function nearest(mx, my, reach) {
     var v = S.view, best = null, bd = reach * reach;
@@ -89,6 +126,7 @@
   function overlay() {
     if (!el.over || !el.over.isConnected || !S.view) return;   /* the view can be reset between the frame being asked for and drawn */
     var v = S.view, z = size(), g = H.clear(el.over), boxes = [], zoom = v.k / fitK;
+    overAt = { x: v.x, y: v.y, k: v.k }; g.removeAttribute('transform');
     function free(b) { for (var i = 0; i < boxes.length; i++) { var a = boxes[i]; if (b[0] < a[2] && b[2] > a[0] && b[1] < a[3] && b[3] > a[1]) return false; } return true; }
     function sx(o) { return o.x * v.k + v.x; } function sy(o) { return o.y * v.k + v.y; }
     function text(x, y, str, cls, anchor) { g.appendChild(s('text', { x: x, y: y, class: cls, 'text-anchor': anchor || 'start' }, str)); }
@@ -173,7 +211,7 @@
 
   /* ---------- world drawing ---------- */
   var STORY = { introduced: 1, invested: 1, customer: 1, partner: 1 };
-  function drawWorld() {
+  function drawWorld(fadeFrom) {
     var w = H.clear(el.world), lens = H.lensByKey(S.lens);
     /* brand gradient in map units, for the warmest route */
     var gd = s('linearGradient', { id: 'cw-route', gradientUnits: 'userSpaceOnUse', x1: -L.R * 0.6, y1: -L.R * 0.6, x2: L.R * 0.6, y2: L.R * 0.6 });
@@ -216,9 +254,18 @@
       var a = L.pos[e.source], b = L.pos[e.target];
       w.appendChild(s('line', { x1: a.x, y1: a.y, x2: b.x, y2: b.y, class: 'net-link k-' + e.kind }));
     });
+    var flips = [];
     L.nodes.forEach(function (o) {
-      w.appendChild(s('circle', { cx: o.x, cy: o.y, r: o.r, class: 'mn ' + (o.person ? 'p' : 'o') + ' o-' + o.owner + (hi[o.id] ? '' : ' dim') }));
+      var c = s('circle', { cx: o.x, cy: o.y, r: o.r, class: 'mn ' + (o.person ? 'p' : 'o') + ' o-' + o.owner + (hi[o.id] ? '' : ' dim') });
+      w.appendChild(c);
+      if (fadeFrom && o.id in fadeFrom && !fadeFrom[o.id] !== !hi[o.id]) flips.push([c, !!hi[o.id]]);
     });
+    /* a lens or selection change: bubbles that lit up or dimmed fade between the two (the dim value stays the CSS one) */
+    if (flips.length && !H.calm.matches) {
+      var probe = flips.filter(function (f) { return !f[1]; })[0] || null, dimO = probe ? parseFloat(getComputedStyle(probe[0]).opacity) : NaN;
+      if (!(dimO >= 0)) dimO = 0.82;
+      flips.forEach(function (f) { f[0].animate([{ opacity: f[1] ? dimO : 1 }, { opacity: f[1] ? 1 : dimO }], { duration: H.dur(2), easing: H.easing() }); });
+    }
     if (routes) routes.res.routes.slice().reverse().forEach(function (r, i, all) {
       var pts = [L.pos[HUB.founders[r.first.best.founder].id], L.pos[r.contact]].concat(r.steps.map(function (st) { return L.pos[st.to]; })).filter(Boolean);
       w.appendChild(s('polyline', { points: pts.map(function (p) { return p.x + ',' + p.y; }).join(' '), class: 'route-line' + (i === all.length - 1 ? ' best' : '') }));
@@ -235,7 +282,7 @@
   function bind(svg) {
     var pts = new Map(), moved = false, pinch = 0;
     function local(ev) { var b = svg.getBoundingClientRect(); return { x: ev.clientX - b.left, y: ev.clientY - b.top }; }
-    svg.addEventListener('pointerdown', function (ev) { try { svg.setPointerCapture(ev.pointerId); } catch (e) { /* not capturable: panning still works inside the map */ } pts.set(ev.pointerId, local(ev)); moved = false; pinch = 0; });
+    svg.addEventListener('pointerdown', function (ev) { stopTween(); try { svg.setPointerCapture(ev.pointerId); } catch (e) { /* not capturable: panning still works inside the map */ } pts.set(ev.pointerId, local(ev)); moved = false; pinch = 0; });
     svg.addEventListener('pointermove', function (ev) {
       var p = local(ev), prev = pts.get(ev.pointerId);
       if (!prev) {                                       /* plain hover */
@@ -262,7 +309,7 @@
     }
     svg.addEventListener('pointerup', up); svg.addEventListener('pointercancel', up);
     svg.addEventListener('pointerleave', function () { if (hover) { hover = null; apply(); } });
-    svg.addEventListener('wheel', function (ev) { ev.preventDefault(); var p = local(ev); zoomAt(p.x, p.y, Math.exp(-ev.deltaY * 0.0015)); }, { passive: false });
+    svg.addEventListener('wheel', function (ev) { ev.preventDefault(); stopTween(); var p = local(ev); zoomAt(p.x, p.y, Math.exp(-ev.deltaY * 0.0015)); }, { passive: false });
   }
 
   function panel() {
@@ -271,7 +318,7 @@
     var close = h('button', { class: 'btn quiet panel-close', type: 'button', 'aria-label': 'Close panel', onclick: function () {
       if (S.sel) S.sel = ''; else if (routes) { S.route = ''; S.extra = null; } else S.list = false;
       S.view = S.sel || routes ? S.view : null; H.render();
-    } }, S.sel && (routes || S.list) ? '← Back' : 'Close ×');
+    } }, S.sel && (routes || S.list) ? '← Back' : 'Close');
     var box = h('aside', { class: 'map-panel' }, close);
     if (S.sel) H.renderProfile(box, S.sel, { panel: true });
     else if (routes) { if (S.extra && S.note) box.appendChild(h('p', { class: 'small muted' }, 'From your briefing: ' + S.note)); box.appendChild(H.routeBlock(S.route, routes.res, function (id) { S.sel = id; H.render(); })); }
@@ -281,6 +328,10 @@
 
   H.views = H.views || {};
   H.views.map = function (root) {
+    /* full-screen 2D drawn twice in a row (a click, a lens, live data): the new view may glide from the old one */
+    stopTween();
+    var again = !S.small && mapTick === H.tick - 1 && H.view === 'map';
+    mapTick = S.small ? -1 : H.tick;
     if (S.list == null) S.list = window.innerWidth >= 1300;      /* wide screens open with the by-need list docked */
     if (S.key == null) S.key = window.innerWidth >= 1100;
     computeRoutes();
@@ -307,9 +358,9 @@
     svg.appendChild(el.world); svg.appendChild(el.over); el.stage.appendChild(svg);
     if (three) svg.style.display = 'none';
     el.stage.appendChild(h('div', { class: 'map-zoom' },
-      h('button', { class: 'btn', type: 'button', 'aria-label': 'Zoom in', onclick: function () { if (three) return H.map3dZoom(1.4); var z = size(); zoomAt(z.w / 2, z.h / 2, 1.5); } }, '+'),
-      h('button', { class: 'btn', type: 'button', 'aria-label': 'Zoom out', onclick: function () { if (three) return H.map3dZoom(1 / 1.4); var z = size(); zoomAt(z.w / 2, z.h / 2, 1 / 1.5); } }, '−'),
-      h('button', { class: 'btn', type: 'button', onclick: function () { if (three) return H.map3dReset(); S.view = fit(); apply(); } }, 'Reset'),
+      h('button', { class: 'btn', type: 'button', 'aria-label': 'Zoom in', onclick: function () { if (three) return H.map3dZoom(1.4); zoomBy(1.5); } }, '+'),
+      h('button', { class: 'btn', type: 'button', 'aria-label': 'Zoom out', onclick: function () { if (three) return H.map3dZoom(1 / 1.4); zoomBy(1 / 1.5); } }, '−'),
+      h('button', { class: 'btn', type: 'button', onclick: function () { if (three) return H.map3dReset(); tweenTo(fit()); } }, 'Reset'),
       h('button', { class: 'btn', type: 'button', 'aria-pressed': String(!!S.key), onclick: function () { S.key = !S.key; H.render(); } }, S.key ? 'Hide key' : 'Key')));
     var side = panel(), wasSheet = el.sheet;
     el.sheet = !!side && window.matchMedia('(max-width: 760px)').matches;
@@ -322,7 +373,8 @@
       el.stage.style.height = tall; if (side) side.style.maxHeight = side.style.height = tall;
     }
 
-    var lens = drawWorld();
+    var lens = drawWorld(again && !three && lastHi ? lastHi : null);
+    lastHi = three || S.small ? null : hi;
     var hit = L.nodes.filter(function (o) { return lens.test(o, L); });
     if (routes) {
       var t = H.data.nodes.get(S.route), best = routes.res.routes[0];
@@ -332,6 +384,7 @@
     } else lens.say(hit, L).forEach(function (c) { say.appendChild(c.nodeType ? c : document.createTextNode(String(c))); });
 
     if (three) {
+      shown = null;
       H.map3d(el.stage, L, { hi: hi, sel: S.sel, route: !!routes, pick: function (id) { S.sel = id; if (id) ensureVisible([id]); H.render(); } });
       return;
     }
@@ -340,13 +393,18 @@
     if (!S.view) S.view = fit(); else fit();
     if (el.sheet && S.sel) focus([S.sel], 1);                 /* bring the tapped bubble above the sheet */
     if (el.sheet && !wasSheet) el.stage.scrollIntoView({ block: 'start' });
-    bind(svg); apply();
+    bind(svg);
+    var to = S.view;
+    if (again && shown && !S.jump) { S.view = shown; tweenTo(to); } else apply();
+    S.jump = false;
   };
   var lastW = window.innerWidth, lastH = window.innerHeight;
   window.addEventListener('resize', function () {
     /* phones fire resize when the address bar hides: there only a change of width counts */
     if (window.innerWidth === lastW && (window.innerWidth <= 760 || window.innerHeight === lastH)) return;
     lastW = window.innerWidth; lastH = window.innerHeight;
-    if (H.view === 'map' && H.data.ready && el.stage && el.stage.isConnected) { S.view = null; H.render(); }
+    /* forget the old framing whatever is on screen, so the map opened later fits the new window */
+    S.view = null; S.jump = true;
+    if (H.view === 'map' && H.data.ready && el.stage && el.stage.isConnected) H.render();
   });
 })();

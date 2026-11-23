@@ -71,14 +71,26 @@
 
   function chart(b, el) { if (el) b.appendChild(el); }
   var BUILD = { systems: function (b) { chart(b, H.chartRuns()); H.systemsDrill(b); }, goals: function (b) { chart(b, H.chartGoals(H.data.goals)); H.goalsDrill(b); }, customers: function (b) { H.pipeDrill('opp', b); }, raise: function (b) { H.pipeDrill('raise', b); }, todo: todo, state: function (b) { H.stateDrill(b); } };
+  /* closing: the sheet slides 16px back out and fades with the backdrop, then the wall is shown as before */
+  var closing = 0;
+  H.closeDrill = function () {
+    var root = document.getElementById('view'), sheet = root.querySelector('.drill'), back = root.querySelector('.d-back');
+    if (closing) return;
+    if (!sheet || H.calm.matches || !sheet.animate) return H.go('wall');
+    var d = 160, e = H.easing(), done = function () { if (!closing) return; clearTimeout(closing); closing = 0; if (H.view !== 'wall') H.go('wall'); };
+    closing = setTimeout(done, d + 80);   /* in case a redraw replaces the sheet mid-way */
+    if (back) { back.style.pointerEvents = 'none'; back.animate([{ opacity: 1 }, { opacity: 0 }], { duration: d, easing: e, fill: 'forwards' }); }
+    sheet.style.pointerEvents = 'none';
+    sheet.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(16px)' }], { duration: d, easing: e, fill: 'forwards' }).onfinish = done;
+  };
   H.drillView = function (root, key) {
     var body = h('div', { class: 'd-body' }), last = H.lastAction();
     try { BUILD[key](body); } catch (e) { console.error(e); body.appendChild(h('p', { class: 'p-empty' }, 'This list could not be drawn')); }
     /* the sheet slides in only when it opens, not when live data redraws it */
     var enter = H.drillShown !== key ? ' enter' : ''; H.drillShown = key;
-    root.appendChild(h('div', { class: 'd-back' + enter, onclick: function () { H.go('wall'); } }));
+    root.appendChild(h('div', { class: 'd-back' + enter, onclick: function () { H.closeDrill(); } }));
     root.appendChild(h('aside', { class: 'drill' + enter, role: 'dialog', 'aria-label': TITLES[key] },
-      h('header', { class: 'd-top' }, h('h2', null, TITLES[key]), h('button', { class: 'd-close', type: 'button', id: 'drill-close', 'aria-label': 'Close', onclick: function () { H.go('wall'); } }, h('kbd', null, 'Esc'), h('i', { 'aria-hidden': 'true' }))),
+      h('header', { class: 'd-top' }, h('h2', null, TITLES[key]), h('button', { class: 'd-close', type: 'button', id: 'drill-close', 'aria-label': 'Close', onclick: function () { H.closeDrill(); } }, h('kbd', null, 'Esc'), h('i', { 'aria-hidden': 'true' }))),
       body,
       last ? h('footer', { class: 'd-foot' }, h('span', { class: 'kv' }, H.clip(last.label, 60)), h('button', { class: 'sw-btn', type: 'button', onclick: function () { H.undo(); } }, 'Undo')) : null));
   };

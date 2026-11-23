@@ -1,10 +1,10 @@
-.login { max-width: 400px; margin: 14vh auto 0; padding: 32px 28px 26px; border-radius: var(--r-xl, 20px); background: var(--surface, #11151b); border: 1px solid var(--line, #26303a);
-  box-shadow: var(--shadow-2); display: grid; gap: 14px; font-family: var(--font-body, Manrope, system-ui, sans-serif); }
-.login h2 { margin: 0; font-size: 22px; letter-spacing: -0.02em; }
-.login p { margin: 0; color: var(--ink2, #b4bdc9); font-size: 14px; line-height: 1.5; }
-.login input { font: inherit; font-size: 16px; height: 44px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line-strong, #26303a); background: var(--bg, transparent); color: inherit; }
+.login { max-width: 400px; margin: 14vh auto 0; padding: 32px 24px 24px; border-radius: var(--r-xl, 20px); background: var(--surface, #11151b); border: 1px solid var(--line, #26303a);
+  box-shadow: var(--shadow-2); display: grid; gap: 16px; font-family: var(--font-body, Manrope, system-ui, sans-serif); }
+.login h2 { margin: 0; font-size: var(--t-xl, 20px); letter-spacing: -0.02em; }
+.login p { margin: 0; color: var(--ink2, #b4bdc9); font-size: var(--t-md, 14px); line-height: 1.5; }
+.login input { font: inherit; font-size: 16px; height: 44px; padding: 0 12px; border-radius: var(--r, 10px); border: 1px solid var(--line-strong, #26303a); background: var(--bg, transparent); color: inherit; }
 .login input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-.login button { font: inherit; font-weight: 700; height: 44px; border-radius: 10px; border: 0; cursor: pointer; background: var(--brand-grad); color: #0b0f14; }
-.login button:hover { filter: brightness(1.06); }
+.login button { font: inherit; font-weight: 600; height: 44px; border-radius: var(--r, 10px); border: 0; cursor: pointer; background: var(--ink, #eef1f5); color: var(--bg, #090b0f); }
+.login button:hover { background: color-mix(in srgb, var(--ink, #eef1f5) 86%, var(--bg, #090b0f)); }
 .login button[disabled] { opacity: .6; cursor: default; }
-.login-note { min-height: 1.2em; font-size: 13px; }
+.login-note { min-height: 1.2em; font-size: var(--t-sm, 13px); }

@@ -1,25 +1,25 @@
 /* Styles that belong to one view. Shared pieces live in base.css. */
 
 /* Routes (beside the map) */
-.routes { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+.routes { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
 .route { display: grid; gap: 8px; align-content: start; }
 .route header { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
-.route-chain { font-size: 13px; color: var(--ink2); overflow-wrap: anywhere; }
-.route-steps { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 14px; }
+.route-chain { font-size: var(--t-sm); color: var(--ink2); overflow-wrap: anywhere; }
+.route-steps { margin: 0; padding-left: 20px; display: grid; gap: 8px; font-size: var(--t-md); }
 
 /* Profile */
-.profile-head h2 { font-size: 28px; }
-.next { border-left: 3px solid var(--accent); border-radius: 4px var(--r) var(--r) 4px; }
-.facts { margin: 0; display: grid; gap: 10px 20px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+.profile-head h2 { font-size: var(--t-2xl); }
+.next { border-left: 2px solid var(--line-strong); border-radius: var(--r-sm) var(--r-lg) var(--r-lg) var(--r-sm); }
+.facts { margin: 0; display: grid; gap: 12px 20px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
 .fact { min-width: 0; }
-.fact dt { font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.fact dt { font-size: var(--t-xs); font-weight: 500; color: var(--muted); }
 .fact dd { margin: 0; overflow-wrap: anywhere; }
-.notes { white-space: pre-wrap; overflow-wrap: anywhere; max-width: none; font-size: 14px; }
-.touch-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); align-items: start; }
-.touch-group { display: grid; gap: 6px; min-width: 0; }
-.touch-group h3 { font-size: 14px; }
+.notes { white-space: pre-wrap; overflow-wrap: anywhere; max-width: none; font-size: var(--t-md); }
+.touch-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); align-items: start; }
+.touch-group { display: grid; gap: 8px; min-width: 0; }
+.touch-group h3 { font-size: var(--t-md); }
 .touch-group h3.eug { color: var(--eug); } .touch-group h3.alex { color: var(--alex); } .touch-group h3.muted { color: var(--muted); }
-.touches { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 14px; }
-.touches li { display: grid; grid-template-columns: 62px minmax(0, 1fr); gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; overflow-wrap: anywhere; }
-.touch-date { color: var(--muted); font-size: 12.5px; padding-top: 1px; }
-.sources { margin: 0; padding-left: 18px; columns: 2 280px; font-size: 14px; overflow-wrap: anywhere; }
+.touches { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: var(--t-md); }
+.touches li { display: grid; grid-template-columns: 62px minmax(0, 1fr); gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 8px 12px; overflow-wrap: anywhere; }
+.touch-date { color: var(--muted); font-size: var(--t-sm); padding-top: 1px; }
+.sources { margin: 0; padding-left: 20px; columns: 2 280px; font-size: var(--t-md); overflow-wrap: anywhere; }

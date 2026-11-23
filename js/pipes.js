@@ -48,13 +48,19 @@
   H.pipePanel = function (key, box) {
     var p = H.pipe(key);
     if (!p.total) { box.appendChild(h('p', { class: 'p-empty' }, 'No cards yet')); return; }
-    var max = Math.max.apply(null, p.stages.map(function (s) { return s.n; }).concat([1])), g = key === 'opp' ? boardGoal(key) : null;   /* the LOI goal is about customers, not investors */
+    var g = key === 'opp' ? boardGoal(key) : null;   /* the LOI goal is about customers, not investors */
+    var max = Math.max.apply(null, p.stages.map(function (s) { return s.n; }).concat([1, g ? g.target : 0])), pk = key === 'opp' ? 'pipe-customers' : 'pipe-raise';
     box.appendChild(h('ul', { class: 'hbars funnel', title: 'Open the board', onclick: function () { H.go(key === 'opp' ? 'customers' : 'raise'); } }, p.stages.map(function (s) {
-      return H.bar(s.name, s.n, max, s.won ? 'won' : '', s.n + ' at ' + s.name + (s.late ? ', ' + s.late + ' with an overdue step' : ''));
+      /* late cards are the warn piece at the end of the bar; the won stages carry the goal's target as a dashed tick */
+      return H.bar(s.name, s.n, max, s.won ? 'won' : '', s.n + ' at ' + s.name + (s.late ? ', ' + s.late + ' with an overdue step' : '') + (s.won && g ? ' · G' + g.no + ' target ' + g.target : ''),
+        { k: pk + '-' + s.name, late: s.late, target: s.won && g ? g.target : null });
     })));
+    /* cards filed in the last 7 days, from createdAt; only said when the cards carry that date */
+    var dated = (H.data[BOARDS[key].col] || []).filter(function (r) { return H.parse(r.createdAt); }), fresh = dated.filter(function (r) { return H.daysSince(r.createdAt) < 7; }).length;
     box.appendChild(h('div', { class: 'stats' },
-      g ? h('div', { class: 'stat' + (p.won < g.target ? ' warn' : '') }, h('b', { class: 'num' }, p.won + ' of ' + g.target), h('span', null, p.wonWord + ' · G' + g.no + ' target')) : null,
-      h('div', { class: 'stat' + (p.moves.length ? ' warn' : '') }, h('b', { class: 'num' }, p.moves.length), h('span', null, 'need a move' + (p.oldest ? ', oldest ' + p.oldest + 'd late' : '')))));
+      g ? h('div', { class: 'stat' }, h('b', { class: 'num', 'data-k': pk + '-won', 'data-v': p.won }, p.won + ' of ' + g.target), h('span', null, p.wonWord + ' · G' + g.no + ' target')) : null,
+      h('div', { class: 'stat' + (p.moves.length ? ' warn' : '') }, h('b', { class: 'num', 'data-k': pk + '-moves', 'data-v': p.moves.length }, p.moves.length), h('span', null, 'need a move' + (p.oldest ? ', oldest ' + p.oldest + 'd late' : '')),
+        dated.length ? h('small', { class: 'stat-d num', 'data-k': pk + '-new-week', 'data-v': fresh }, fresh ? '+' + fresh + ' new this week' : 'none new this week') : null)));
   };
 
   function fact(label, value, cls) { return value ? h('span', { class: 'fact-i' + (cls ? ' ' + cls : '') }, h('i', null, label), ' ', value) : null; }

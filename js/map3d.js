@@ -10,6 +10,16 @@
   var G = null, box = null, labs = null, loading = null, raf = 0, hover = '', els = new Map(), titles = [];
   var cur = { L: null, hi: {}, sel: '', pick: null, C: null, route: false, flownTo: '' };
   var pinned = {}, dragging = '', byIdCore = {};   /* bubbles a founder pulled and dropped, and the one being pulled now */
+  /* battery: once the camera and the bubbles have been still for a second, the 3D drawing and the label loop sleep;
+     a pointer, the wheel, a drag, the layout moving or a redraw wakes them */
+  var lastMove = 0, asleep = false, camWas = '', downs = 0;
+  function fly(ms) { return H.calm.matches ? 0 : ms; }   /* reduced motion: the camera jumps */
+  function wake() {
+    lastMove = performance.now();
+    if (!G) return;
+    if (asleep) { asleep = false; G.resumeAnimation(); }
+    if (!raf && box && box.isConnected) raf = requestAnimationFrame(tick);
+  }
 
   function load() {
     if (window.ForceGraph3D) return Promise.resolve();
@@ -86,12 +96,13 @@
       .onNodeHover(function (n) { hover = n && !n.core ? n.id : ''; gl.style.cursor = hover ? 'pointer' : 'grab'; G.linkColor(G.linkColor()).linkWidth(G.linkWidth()); })
       .onNodeClick(function (n) { if (cur.pick && !n.core) cur.pick(n.id); })
       .onBackgroundClick(function () { if (cur.pick && cur.sel) cur.pick(''); })
-      .onNodeDrag(function (n) { if (dragging !== n.id) { dragging = n.id; relink(); } })
+      .onEngineTick(function () { lastMove = performance.now(); })
+      .onNodeDrag(function (n) { lastMove = performance.now(); if (dragging !== n.id) { dragging = n.id; relink(); } })
       .onNodeDragEnd(function (n) {
         dragging = '';
         /* it stays where it was dropped (after the library has let go of it) */
         /* Caladan and the founders always go back to the centre */
-        setTimeout(function () { if (n.core) { n.fx = n.hx; n.fy = n.hy; n.fz = n.hz; } else { n.fx = n.x; n.fy = n.y; n.fz = n.z; pinned[n.id] = 1; } relink(); G.d3ReheatSimulation(); }, 0);
+        setTimeout(function () { if (n.core) { n.fx = n.hx; n.fy = n.hy; n.fz = n.hz; } else { n.fx = n.x; n.fy = n.y; n.fz = n.z; pinned[n.id] = 1; } relink(); G.d3ReheatSimulation(); wake(); }, 0);
       });
     /* Pulling: no free-running layout, so the map keeps its meaning. Every loose bubble is held to its home by a spring;
        only the links of the bubble being pulled, or of a dropped one, pull too, so its direct contacts follow it. */
@@ -99,6 +110,8 @@
     G.d3Force('link').distance(70).strength(function (l) { var a = idOf(l.source), b = idOf(l.target); var d = dragging && !(byIdCore[dragging]) ? dragging : ''; return a === d || b === d || pinned[a] || pinned[b] ? 0.25 : 0; });
     /* flatter, brighter light so the founder colours read at full strength instead of shaded dark */
     G.scene().children.forEach(function (o) { if (o.isAmbientLight) o.intensity *= 2.2; if (o.isDirectionalLight) o.intensity *= 0.5; });
+    ['pointerdown', 'pointermove', 'wheel', 'touchstart', 'keydown'].forEach(function (t) { box.addEventListener(t, wake, { passive: true }); });
+    box.addEventListener('pointerdown', function () { downs++; }); ['pointerup', 'pointercancel'].forEach(function (t) { window.addEventListener(t, function () { if (downs) { downs = 0; wake(); } }); });
   }
 
   function home3d() {
@@ -120,9 +133,13 @@
   function tick() {
     raf = 0;
     if (!G) return;
-    if (!box.isConnected) { G.pauseAnimation(); return; }   /* left the map: stop drawing frames */
-    raf = requestAnimationFrame(tick);
-    var cam = G.camera(), M = cam.matrixWorldInverse.elements, W = box.clientWidth, Hh = box.clientHeight;
+    if (!box.isConnected) { asleep = true; G.pauseAnimation(); return; }   /* left the map: stop drawing frames */
+    var cam = G.camera(), M = cam.matrixWorldInverse.elements, W = box.clientWidth, Hh = box.clientHeight, now = performance.now();
+    var camNow = Array.prototype.join.call(M, ',');
+    if (camNow !== camWas) { camWas = camNow; lastMove = now; }
+    /* still for a second, nothing held down: draw this last frame of labels, then sleep until woken */
+    if (now - lastMove > 1000 && !downs && !dragging) { asleep = true; G.pauseAnimation(); }
+    else raf = requestAnimationFrame(tick);
     var data = G.graphData(), want = [], seen = {};
     /* flat bubbles, as on the old map: each glows its exact colour and ignores the lights, so the founder orange stays
        orange instead of shading to brown. Set only when the colour changes. */
@@ -182,11 +199,11 @@
       }
       cur.L = L;
       G.nodeColor(colour).linkColor(G.linkColor()).linkWidth(G.linkWidth());
-      G.resumeAnimation();
+      asleep = false; G.resumeAnimation(); lastMove = performance.now();
       if (selChanged && cur.sel) {
         var n = G.graphData().nodes.filter(function (x) { return x.id === cur.sel; })[0];
         /* fly in along the current line of sight, stopping 160 units short of the bubble */
-        if (n) { var c = G.cameraPosition(), dx = c.x - n.x, dy = c.y - n.y, dz = c.z - n.z, d = Math.hypot(dx, dy, dz) || 1; G.cameraPosition({ x: n.x + dx / d * 160, y: n.y + dy / d * 160, z: n.z + dz / d * 160 }, { x: n.x, y: n.y, z: n.z }, 900); }
+        if (n) { var c = G.cameraPosition(), dx = c.x - n.x, dy = c.y - n.y, dz = c.z - n.z, d = Math.hypot(dx, dy, dz) || 1; G.cameraPosition({ x: n.x + dx / d * 160, y: n.y + dy / d * 160, z: n.z + dz / d * 160 }, { x: n.x, y: n.y, z: n.z }, fly(900)); }
       }
       if (!raf) raf = requestAnimationFrame(tick);
     }, function (e) {
@@ -199,8 +216,8 @@
     if (!G || !cur.L) return;
     pinned = {};
     G.graphData().nodes.forEach(function (n) { if (n.core) { n.fx = n.hx; n.fy = n.hy; n.fz = n.hz; } else { n.fx = n.fy = n.fz = undefined; } });
-    relink(); G.d3ReheatSimulation();
-    G.cameraPosition(home(), { x: 0, y: 0, z: 0 }, 800);
+    relink(); G.d3ReheatSimulation(); wake();
+    G.cameraPosition(home(), { x: 0, y: 0, z: 0 }, fly(800));
   };
-  H.map3dZoom = function (f) { if (!G) return; var p = G.cameraPosition(), t = G.controls().target; G.cameraPosition({ x: t.x + (p.x - t.x) / f, y: t.y + (p.y - t.y) / f, z: t.z + (p.z - t.z) / f }, { x: t.x, y: t.y, z: t.z }, 300); };
+  H.map3dZoom = function (f) { if (!G) return; wake(); var p = G.cameraPosition(), t = G.controls().target; G.cameraPosition({ x: t.x + (p.x - t.x) / f, y: t.y + (p.y - t.y) / f, z: t.z + (p.z - t.z) / f }, { x: t.x, y: t.y, z: t.z }, fly(300)); };
 })();

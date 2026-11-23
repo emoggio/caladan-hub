@@ -46,6 +46,7 @@ Every visual change follows these, so the page never needs a redesign pass. When
 **Motion:**
 - One easing (`--ease`) and three durations: about 150ms for hover and press, about 220ms for small things appearing or leaving, about 420ms for sheets and values changing. Animate only `transform` and `opacity`, never width, height or position.
 - `H.render()` rebuilds the page on every refresh, so never put an entrance animation on panels, rows or charts: it would replay every minute. Motion explains a change (a number or bar that moved, a sheet opening or closing, the map moving to a new view) and is skipped under `prefers-reduced-motion`.
+- How change-motion works: every number and bar fill carries `data-k` (a stable key, e.g. `pipe-customers-Lead-bar`) and `data-v` (its value). `H.render()` snapshots them before redrawing and `H.settle()` (in `js/util.js`) animates only what changed. New numbers and bars must carry both attributes, or they will simply snap. `H.calm` is the reduced-motion switch; every animation checks it.
 - No loops, except a live status dot and the loading shimmer.
 
 **Before committing a visual change:** compare it with the references above, then do rule 6 (light and dark, desktop and phone, no console errors).

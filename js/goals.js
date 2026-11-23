@@ -51,6 +51,23 @@
     return g.left < 0 ? h('span', { class: 'late' }, (-g.left) + 'd late') : g.left === 0 ? h('span', { class: 'late' }, 'today') : g.left + 'd left';
   }
 
+  /* the share of the time between setting the goal and its date that has gone: where a straight line would be today */
+  function pace(g) {
+    var a = H.parse(g.raw.createdAt), b = H.parse(g.by); if (!a || !b || b <= a) return null;
+    return Math.max(0, Math.min(1, (Date.now() - a.getTime()) / (b.getTime() - a.getTime())));
+  }
+  /* the track: the fill when the number is known, hatched when not, and the pace tick on either */
+  function track(g, pct) {
+    var p = pace(g), lab = (pct == null ? 'progress unknown' : Math.round(pct * 100) + ' percent of target') + (p != null ? ', ' + Math.round(p * 100) + ' percent of the time used' : '');
+    return h('div', { class: 'ga-track' + (pct == null ? ' unknown' : ''), role: 'img', 'aria-label': lab },
+      pct != null ? h('i', { style: 'width:' + (pct * 100).toFixed(1) + '%', 'data-k': 'goal-' + g.id + '-bar', 'data-v': Math.round(pct * 100) }) : null,
+      p != null ? h('em', { class: 'ga-pace', style: 'left:calc(' + (p * 100).toFixed(1) + '% - 1px)', title: 'Where we\u2019d be on a straight line', 'data-k': 'goal-' + g.id + '-pace', 'data-v': Math.round(p * 100) }) : null);
+  }
+  /* the number over time, only when the goal's log holds at least two numbers */
+  function logSpark(g) {
+    var pts = (Array.isArray(g.raw.log) ? g.raw.log : []).filter(function (l) { return l && l.to && typeof l.to.current === 'number'; }).map(function (l) { return l.to.current; });
+    return pts.length >= 2 ? H.spark(pts, { k: 'goal-' + g.id + '-spark', area: 'flat', w: 96, title: 'The number each time it was set' }) : null;
+  }
   /* one gauge: the number against its target on a track, the status as a light and a word, the days as text */
   function gauge(g) {
     var st = STATUS[g.status], pct = g.current != null && g.target ? Math.max(0, Math.min(1, g.current / g.target)) : null;
@@ -61,13 +78,15 @@
       h('div', { class: 'ga-top' }, h('span', { class: 'ga-no num' }, 'G' + g.no), h('span', { class: 'ga-title' }, g.title), h('span', { class: 'ga-when num' }, when(g))),
       h('div', { class: 'ga-mid' }, h('span', { class: 'ga-txt' }, g.currentText || 'Count not recorded', g.target != null ? h('small', null, ' · target ' + g.target + (g.unit ? ' ' + g.unit : '')) : null),
         h('span', { class: 'ga-status' }, h('i', { class: 'gdot' }), g.waitOn ? 'With ' + H.whoText(g.waitOn) : st[0])),
+      pace(g) != null ? track(g, null) : null,
       g.answer ? h('p', { class: 'ga-ans' }, g.answer) : null);
     return h('li', { class: 'gauge g-' + st[1], title: g.text || g.title },
       h('div', { class: 'ga-top' }, h('span', { class: 'ga-no num' }, 'G' + g.no), h('span', { class: 'ga-title' }, g.title), h('span', { class: 'ga-when num' }, when(g))),
       h('div', { class: 'ga-mid' },
-        h('span', { class: 'ga-num num' }, g.current != null ? g.current : '?', g.target != null ? h('small', null, ' / ' + g.target + (g.unit ? ' ' + g.unit : '')) : h('small', null, g.current != null && g.unit ? ' ' + g.unit : ' no target')),
+        h('span', { class: 'ga-num num' }, h('span', { 'data-k': 'goal-' + g.id + '-current', 'data-v': g.current }, g.current), g.target != null ? h('small', null, ' / ' + g.target + (g.unit ? ' ' + g.unit : '')) : h('small', null, g.unit ? ' ' + g.unit : ' no target')),
+        logSpark(g),
         h('span', { class: 'ga-status' }, h('i', { class: 'gdot' }), st[0])),
-      h('div', { class: 'ga-track' + (pct == null ? ' unknown' : ''), role: 'img', 'aria-label': pct == null ? 'progress unknown' : Math.round(pct * 100) + ' percent of target' }, pct != null ? h('i', { style: 'width:' + Math.round(pct * 100) + '%' }) : null));
+      track(g, pct));
   }
   H.goalsPanel = function (box) {
     var goals = H.goalList();
