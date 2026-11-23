@@ -31,7 +31,7 @@ Headers:  apikey: {PUBLISHABLE_KEY}
 Body:     {"key": "{YOUR_BOT_KEY}", ...arguments}
 ```
 
-`BRAIN_URL`, `PUBLISHABLE_KEY` and `YOUR_BOT_KEY` are given to you privately by a founder. Never write the bot key into a message, a file or the brain. Every write you make is recorded with your name (`grok`) and can be undone.
+`BRAIN_URL`, `PUBLISHABLE_KEY` and `YOUR_BOT_KEY` are given to you privately by a founder. Never write the bot key into a message, a file or the brain. Every write you make is recorded with your bot name (`grok` for Eugenio's Grok, `grok_alex` for Alex's) and can be undone.
 
 Example (curl):
 
@@ -125,7 +125,7 @@ Id prefixes: `n_` people and organisations the founders deal with; `c_` companie
 
 ### System
 
-- `status`: health of every routine. Id `<who>_<routine>`. Only routines that run have one: `grok_email` (email and calendar triage) and `grok_weekly` (the Saturday upkeep). Do not write one for meeting prep or a one-off job. Fields: `lastAttempt`, `lastSuccess`, `lastError` (null when fine), `read`, `changed`. A source is **current** if `lastSuccess` is within 26 hours (weekly ones: 8 days), **failed** if `lastAttempt` is later than `lastSuccess`, otherwise **stale**.
+- `status`: health of every routine. Id `<who>_<routine>`. Only routines that run have one: `grok_email` (Eugenio's Grok: email and calendar triage), `grok_weekly` (Eugenio's Grok: the Saturday upkeep, for both founders) and `alex_grok_email` (Alex's Grok: email and calendar triage; listed under Systems as history, no light yet). Each Grok writes only its own. Do not write one for meeting prep or a one-off job. Fields: `lastAttempt`, `lastSuccess`, `lastError` (null when fine), `read`, `changed`. A source is **current** if `lastSuccess` is within 26 hours (weekly ones: 8 days), **failed** if `lastAttempt` is later than `lastSuccess`, otherwise **stale**.
 - `activity`: a log line per notable run, `{date, agent, summary, nodes[]}`. Prefer `status` for health; `brain_changes` already records every write.
 - `settings/main`: founders' settings. The API rejects bot writes.
 
@@ -139,7 +139,7 @@ Id prefixes: `n_` people and organisations the founders deal with; `c_` companie
 
 **A founder asks for a brief** (there is no scheduled morning or evening brief): call `brain_todo` (it is the health check too), then at most 12 lines: **Delete** (up to 3, with the reason), **Do** (up to 3: `action · who asked · goal · why today`), **Know** (up to 2), **Missing** (up to 2), **Broken** (only if something is).
 
-**Calendar and email (each run)**: for meetings in the last day and the next day, and email threads with people in the brain: add touchpoints (subject or meeting title only, never email bodies), update `lastContact`, propose commitments and decisions you see, and flag new people who matter (do not create a person unless they serve a goal). Prep for an outside call goes out 30 to 60 minutes before, never the day before (see GROK-PLAYBOOK.md). Write `status/grok_email`.
+**Calendar and email (each run)**: for meetings in the last day and the next day, and email threads with people in the brain: add touchpoints (subject or meeting title only, never email bodies), update `lastContact`, propose commitments and decisions you see, and flag new people who matter (do not create a person unless they serve a goal). Prep for an outside call goes out 30 to 60 minutes before, never the day before (see GROK-PLAYBOOK.md). Write your own status: `status/grok_email` (Eugenio's Grok) or `status/alex_grok_email` (Alex's).
 
 **Saturday upkeep (weekly)**: a clean-up of the brain, not a scoreboard. Start from `brain_todo`: it lists exactly what the control room flags. Make the fields the control room shows true: `status` and `who` on promises and decisions (from any `triage` answers), one current `next` per relationship on the pipeline card and on the person and organisation (close or move stale ones with one `brain_step` per step, never add a second), numeric `current` and `status` on goals, rivals with `caps`, rounds and contracts with `amountUSD` and `segment`. Propose duplicates for archiving. Write `status/grok_weekly`.
 

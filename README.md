@@ -1,6 +1,6 @@
 # Caladan hub: control room
 
-A web page for the two founders, mostly for looking (the few changes it allows are listed in GROK.md section 6),, over the Caladan brain (a Supabase database; no data lives in this repository).
+A web page for the two founders, mostly for looking (the few changes it allows are listed in GROK.md section 6), over the Caladan brain (a Supabase database; no data lives in this repository).
 
 Bots and other AIs read two files, both once per session:
 - **[GROK.md](GROK.md)**: the reference. How to reach the brain, the data model, what to do on each trigger, the health check, and which fields each chart on the page reads.
