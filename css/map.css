@@ -7,6 +7,7 @@
 .map-bar { display: flex; gap: 8px 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
 .lenses { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; min-width: 0; padding-bottom: 2px; }
 .lenses .pill { white-space: nowrap; flex: none; padding: 4px 12px; }
+.lens-l { flex: none; align-self: center; color: var(--muted); }
 .map-toggle { display: inline-flex; gap: 8px; align-items: center; color: var(--ink2); white-space: nowrap; }
 .map-say { max-width: none; min-height: 1.5em; }
 .map-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start; }

@@ -326,6 +326,9 @@
     return box;
   }
 
+  /* how many researched firms the tick box would add */
+  function researched() { var n = 0; H.data.nodes.forEach(function (x, id) { if (!H.isUs(id) && H.refHidden(id)) n++; }); return n; }
+
   H.views = H.views || {};
   H.views.map = function (root) {
     /* full-screen 2D drawn twice in a row (a click, a lens, live data): the new view may glide from the old one */
@@ -344,13 +347,15 @@
       h('div', { class: 'seg', role: 'group', 'aria-label': 'Map style' },
         h('button', { type: 'button', 'aria-pressed': String(!three), onclick: function () { if (three) set3d(false); } }, '2D'),
         h('button', { type: 'button', 'aria-pressed': String(three), onclick: function () { if (!three) set3d(true); } }, '3D')),
-      h('div', { class: 'lenses', role: 'group', 'aria-label': 'What to highlight' }, H.lenses.map(function (l) {
+      h('div', { class: 'lenses', role: 'group', 'aria-label': 'What to highlight' }, [h('span', { class: 'lens-l small' }, 'Highlight')].concat(H.lenses.map(function (l) {
         return h('button', { class: 'pill', type: 'button', 'aria-pressed': String(!routes && l.key === S.lens),
           onclick: function () { S.lens = l.key; S.route = ''; S.extra = null; S.view = null; H.render(); } }, l.label);
-      })),
+      }))),
       h('button', { class: 'btn', type: 'button', 'aria-pressed': String(!!S.list), onclick: function () { S.list = !S.list; S.sel = ''; S.view = null; H.render(); } }, S.list ? 'Hide people by need' : 'People by need'),
-      h('label', { class: 'map-toggle small' }, h('input', { type: 'checkbox', id: 'map-landscape', checked: S.landscape,
-        onchange: function (ev) { S.landscape = ev.target.checked; S.autoLand = false; S.view = null; H.render(); } }), ' Show landscape'));
+      /* the research landscape: organisations from market research that neither founder has dealt with, hidden unless linked */
+      h('label', { class: 'map-toggle small', title: 'Adds organisations from market research that neither of you has dealt with. Those linked to someone you know are always shown.' },
+        h('input', { type: 'checkbox', id: 'map-landscape', checked: S.landscape,
+          onchange: function (ev) { S.landscape = ev.target.checked; S.autoLand = false; S.view = null; H.render(); } }), ' Include researched firms (' + researched() + ')'));
     var say = h('p', { class: 'lead map-say' });
     el.stage = h('div', { class: 'map-stage' });
     var svg = s('svg', { class: 'map-svg', role: 'img', 'aria-label': 'Map of the Caladan network. Use search to reach any person or organisation.' });

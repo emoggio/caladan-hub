@@ -75,8 +75,15 @@
   function drawViewer(detected) {
     var box = H.clear(document.getElementById('viewer'));
     function btn(key) { return h('button', { type: 'button', 'aria-pressed': String(H.me === key), onclick: function () { H.me = key; H.store.set('me', key); drawViewer(false); H.render(); } }, HUB.founders[key].name); }
-    box.appendChild(h('span', { class: 'viewer-l' }, detected && H.me ? 'Signed in as' : 'Viewing as'));
-    box.appendChild(h('span', { class: 'seg', role: 'group', 'aria-label': 'Who is viewing' }, btn('eugenio'), btn('alex')));
+    /* signed in: the page knows who you are, and everything you confirm or undo carries your name, so there is no switch.
+       The switch only appears when the sign-in name could not be matched to a founder. */
+    if (detected && H.me) {
+      box.appendChild(h('span', { class: 'viewer-l' }, 'Signed in as'));
+      box.appendChild(h('b', { class: 'viewer-me' }, HUB.founders[H.me].name));
+    } else {
+      box.appendChild(h('span', { class: 'viewer-l' }, 'Viewing as'));
+      box.appendChild(h('span', { class: 'seg', role: 'group', 'aria-label': 'Who is viewing' }, btn('eugenio'), btn('alex')));
+    }
     if (H.signedIn && window.brainSignOut) box.appendChild(h('button', { class: 'sw-btn signout', type: 'button', onclick: function () { window.brainSignOut(); } }, 'Sign out'));
   }
   /* Display names are "Eugenio Moggio" and "Al". */
@@ -112,7 +119,7 @@
         var who = founderFromName(me.name);
         if (who) { H.me = who; drawViewer(true); if (H.data.ready) H.render(); }
       });
-    }).catch(function () { /* the switch at the top still works */ });
+    }).catch(function () { /* the name was not found: the switch at the top lets the founder say who they are */ });
 
     window.claude.use('db').then(function (db) {
       if (!db) return offline('Database not available', 'Sign in again and reload.');

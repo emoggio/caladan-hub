@@ -82,7 +82,7 @@
     root.appendChild(h('div', { class: 'section profile-head' },
       h('div', { class: 'chips' }, h('span', { class: 'chip' }, person ? 'Person' : n.type === 'org' ? 'Organisation' : n.type === 'military' ? 'Military unit' : 'Programme'),
         n.status && n.status !== 'reference' ? h('span', { class: 'chip' }, H.cap(n.status)) : null,
-        x.ref ? h('span', { class: 'chip', title: 'Part of the background landscape, not someone you deal with directly' }, 'Background reference') : null,
+        x.ref ? h('span', { class: 'chip', title: 'From market research: neither of you has dealt with them directly' }, 'Researched firm') : null,
         H.isCold && person && H.isCold(n) ? h('span', { class: 'chip warn' }, 'Going cold') : null),
       h('h2', null, n.name),
       h('p', { class: 'lead' }, person ? [n.role || 'Role not recorded', x.org ? [' at ', H.nodeLink(x.org)] : null, '. '] : (x.sector ? x.sector + '. ' : ''), summary),

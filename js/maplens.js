@@ -43,7 +43,7 @@
         return [h('b', null, H.plural(inv.length, 'investor')), ' on the map backed ', h('b', null, H.plural(hit.length - inv.length, 'company', 'companies')),
           '. You have a contact at ', h('b', null, known), ' of the investors. Point at or tap a bubble to see who backed whom.'];
       } },
-    { key: 'all', label: 'Whole map', test: function () { return true; },
+    { key: 'all', label: 'Everyone', test: function () { return true; },
       say: function (hit, L) {
         return [h('b', null, count(hit)), ' in ' + L.groups.length + ' territories. Closer to the centre means more recent contact.'];
       } }
