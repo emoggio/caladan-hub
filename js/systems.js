@@ -8,7 +8,7 @@
   var GROK = [['email', 'Eugenio’s email'], ['weekly', 'Saturday upkeep']];
   /* each founder's Grok writes its own email feed; Alex's is status/alex_grok_email (GROK.md section 3) */
   var ROWS = [['grok', 'Grok', GROK], ['alex_grok', 'Alex’s Grok', [['email', 'Alex’s email']]]];
-  var WEEKLY = { weekly: 1, research: 1, discovery: 1, review: 1, shared_folder: 1 };   /* weekly feeds are allowed 8 days, the rest 26 hours */
+  var WEEKLY = { weekly: 1, research: 1, discovery: 1, review: 1, shared_folder: 1 };   /* weekly feeds are allowed 8 days, the rest 26 weekday hours */
   var WORD = { ok: 'ok', stale: 'stale', failed: 'failed', never: 'never run', skipped: 'skipped' };
   var NAME = { daily: 'daily brief', weekly: 'Saturday upkeep', email: 'email', grok_email: 'Grok email', calendar: 'calendar', gmail: 'email', granola: 'meeting notes', drive: 'Drive', brief: 'brief', prep: 'meeting prep', folder: 'bot folder', notify: 'notification', research: 'research', discovery: 'discovery', index: 'index', review: 'weekly review', inbox: 'bot inbox' };
 
@@ -18,8 +18,20 @@
     if (/^skipped:/i.test(d.lastError || '')) return 'skipped';
     if (!isNaN(tried) && (isNaN(ok) || tried > ok)) return 'failed';
     if (isNaN(ok)) return 'never';
-    return Date.now() - ok <= (WEEKLY[src] || WEEKLY[id] ? 8 * 24 : 26) * 3600000 ? 'ok' : 'stale';
+    if (WEEKLY[src] || WEEKLY[id]) return Date.now() - ok <= 8 * 24 * 3600000 ? 'ok' : 'stale';
+    return weekdayMs(ok, Date.now()) <= 26 * 3600000 ? 'ok' : 'stale';   /* email is only woken Mon-Fri, so weekends do not count */
   }
+  /* time between two moments, leaving out Saturdays and Sundays (UTC days, as brain_todo's weekday_hours) */
+  function weekdayMs(from, to) {
+    var ms = 0, t = from;
+    while (t < to) {
+      var d = new Date(t), next = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1), end = Math.min(next, to), wd = d.getUTCDay();
+      if (wd !== 0 && wd !== 6) ms += end - t;
+      t = end;
+    }
+    return ms;
+  }
+  H.weekdayMs = weekdayMs;
   /* every expected feed, whether or not it has ever reported, plus any unexpected status doc */
   H.systems = function () {
     var by = {}, out = [], seen = {}; (H.data.status || []).forEach(function (d) { by[d.id] = d; });

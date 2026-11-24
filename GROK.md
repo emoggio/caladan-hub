@@ -125,7 +125,7 @@ Id prefixes: `n_` people and organisations the founders deal with; `c_` companie
 
 ### System
 
-- `status`: health of every routine. Id `<who>_<routine>`. Only routines that run have one: `grok_email` (Eugenio's Grok: email and calendar triage), `grok_weekly` (Eugenio's Grok: the Saturday upkeep, for both founders) and `alex_grok_email` (Alex's Grok: email and calendar triage). Each Grok writes only its own. Do not write one for meeting prep or a one-off job. Fields: `lastAttempt`, `lastSuccess`, `lastError` (null when fine), `read`, `changed`. A source is **current** if `lastSuccess` is within 26 hours (weekly ones: 8 days), **failed** if `lastAttempt` is later than `lastSuccess`, otherwise **stale**.
+- `status`: health of every routine. Id `<who>_<routine>`. Only routines that run have one: `grok_email` (Eugenio's Grok: email and calendar triage), `grok_weekly` (Eugenio's Grok: the Saturday upkeep, for both founders) and `alex_grok_email` (Alex's Grok: email and calendar triage). Each Grok writes only its own. Do not write one for meeting prep or a one-off job. Fields: `lastAttempt`, `lastSuccess`, `lastError` (null when fine), `read`, `changed`. A source is **current** if `lastSuccess` is within 26 weekday hours (Saturdays and Sundays, UTC, do not count, because mail only wakes Grok on weekdays; weekly ones: 8 days), **failed** if `lastAttempt` is later than `lastSuccess`, otherwise **stale**.
 - `activity`: a log line per notable run, `{date, agent, summary, nodes[]}`. Prefer `status` for health; `brain_changes` already records every write.
 - `settings/main`: founders' settings. The API rejects bot writes.
 
