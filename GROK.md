@@ -159,7 +159,7 @@ Always write your own status record at the end of a run, truthfully: `lastAttemp
 
 ## 6. The control room
 
-`https://emoggio.github.io/caladan-hub/` is the only control room; the database is the single master and the old claude.ai hub is retired (do not point anyone there). The page mostly shows. A founder can make four kinds of change there, each recorded in `brain_changes` under their name: a goal's number, closing or dropping a next step, confirming or rejecting a proposal, and undoing their own change. You never need the page, but the charts are only as good as the fields you fill. If a founder says a light is red or a chart looks wrong, check `status`, `brain_changes` and the fields below.
+`https://itcaladanworlds.github.io/caladan-hub/` is the only control room; the database is the single master and the old claude.ai hub is retired (do not point anyone there). The page mostly shows. A founder can make four kinds of change there, each recorded in `brain_changes` under their name: a goal's number, closing or dropping a next step, confirming or rejecting a proposal, and undoing their own change. You never need the page, but the charts are only as good as the fields you fill. If a founder says a light is red or a chart looks wrong, check `status`, `brain_changes` and the fields below.
 
 | Panel (opens to) | Draws | From |
 |---|---|---|
